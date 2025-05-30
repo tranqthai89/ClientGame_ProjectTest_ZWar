@@ -26,5 +26,17 @@ public class EnemyController : MonoBehaviour
             agent.SetDestination(player.position); // Đặt vị trí đích là nhân vật
         }
     }
-
+    void OnTriggerEnter(Collider other) {
+        Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
+        if(other.tag.Equals("Bullet")){
+            BulletController _bullet = other.transform.parent.GetComponent<BulletController>();
+            if(_bullet != null){
+                _bullet.SelfDestruction();
+            }
+        }
+        
+    }
+    // void OnCollisionEnter(Collision collision) {
+    //     Debug.Log("OnCollisionEnter | Va chạm với: " + collision.gameObject.name);
+    // }
 }
