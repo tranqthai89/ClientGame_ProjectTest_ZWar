@@ -12,18 +12,14 @@ public class BulletController : MySimplePoolObjectController
     float maxRangeMove;
 
     [Header("Prefabs")]
-    [SerializeField] MySimplePoolObjectController effectHitPrefab;
+    [SerializeField] ZWar.EffectController effectHitPrefab;
 
     IEnumerator process_Move;
     
     public override void StopAllActionNow()
     {
         base.StopAllActionNow();
-        if(process_Move != null)
-        {
-            StopCoroutine(process_Move);
-            process_Move = null;
-        }
+        process_Move = null;
     }
 
     public void Init(BulletValueDetail _bulletValueDetail, float _speed, float _maxRangeMove)
@@ -40,10 +36,10 @@ public class BulletController : MySimplePoolObjectController
         if(process_Move != null){
             StopCoroutine(process_Move);
         }
-        process_Move = Process_Move();
+        process_Move = DoProcess_Move();
         return StartCoroutine(process_Move);
     }
-    IEnumerator Process_Move()
+    IEnumerator DoProcess_Move()
     {
         Vector3 _startPosition = transform.position;
         Vector3 _hitPoint = _startPosition + transform.forward * maxRangeMove;

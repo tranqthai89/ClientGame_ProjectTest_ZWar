@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using DevToolkit;
 using Unity.Mathematics;
 using UnityEngine;
+using GlobalEnum;
 
 public class MachineGunController : GunController
 {
+    public override GunType gunType => GunType.MachineGun;
+
     [SerializeField]
     private ParticleSystem particleSystem_Shoot;
 

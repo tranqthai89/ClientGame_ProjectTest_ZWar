@@ -8,6 +8,7 @@ TagManager:
   - Ground
   - Obstacle
   - Bullet
+  - Enemy
   layers:
   - Default
   - TransparentFX
@@ -44,4 +45,7 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: UI_HPBar
+    uniqueID: 1072341341
     locked: 0

@@ -3,13 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using DevToolkit;
 using Lean.Pool;
+using Cinemachine;
 
 public class GamePlayManager : MonoBehaviour
 {
     public static GamePlayManager Instance{get;set;}
+
+    [Header("Components")]
+    public WaveManager waveManager;
+    public CinemachineVirtualCamera virtualCamera;
+
     public MySimplePoolManager effectPoolManager;
     public MySimplePoolManager bulletPoolManager;
+    public MySimplePoolManager enemyPoolManager;
+    public MySimplePoolManager mainCharPoolManager;
 
+    public MainCharController MainChar{get;set;}
+    public GameDataControl CurrentGameDataControl{get;set;}
 
     void Awake()
     {
@@ -22,9 +32,21 @@ public class GamePlayManager : MonoBehaviour
 
         effectPoolManager = new MySimplePoolManager();
         bulletPoolManager = new MySimplePoolManager();
+        enemyPoolManager = new MySimplePoolManager();
     }
 
-    public T CreateEffect<T>(T _prefab, Vector3 _pos, Quaternion _quaternion) where T : MySimplePoolObjectController
+    void Start()
+    {
+        Init();
+    }
+
+    public void Init()
+    {
+        CurrentGameDataControl = new GameDataControl();
+    }
+
+    #region Ultilities
+    public T CreateEffect<T>(T _prefab, Vector3 _pos, Quaternion _quaternion) where T : ZWar.EffectController
     {
         if(effectPoolManager == null){effectPoolManager = new MySimplePoolManager();}
         if (_prefab == null)
@@ -58,4 +80,22 @@ public class GamePlayManager : MonoBehaviour
 
         return _tmpBullet;
     }
+    public T CreateEnemy<T>(T _prefab, Vector3 _pos, Quaternion _quaternion) where T : EnemyController
+    {
+        if(enemyPoolManager == null){enemyPoolManager = new MySimplePoolManager();}
+        if (_prefab == null)
+        {
+            Debug.LogError("Prefab is null!");
+            return null;
+        }
+
+        T _tmpEnemy = LeanPool.Spawn(_prefab, _pos, _quaternion);
+        _tmpEnemy.onSelfDestruction = (_o) => {
+            enemyPoolManager.RemoveObjectsNow(_o);
+        };
+        enemyPoolManager.AddObject(_tmpEnemy);
+
+        return _tmpEnemy;
+    }
+    #endregion
 }

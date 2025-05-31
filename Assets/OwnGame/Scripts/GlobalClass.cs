@@ -13,4 +13,17 @@ namespace GlobalClass
             damage = _other.damage;    
         }
     }
+    [System.Serializable] public class CollectionInfo {
+        public int totalEnemy;
+        public int totalEnemySpawned;
+        public int totalEnemyDie;
+        public float ratioStartFinalWave;
+
+        public void ResetData(){
+            totalEnemy = 0;
+            totalEnemySpawned = 0;
+            totalEnemyDie = 0;
+            ratioStartFinalWave = 0;
+        }
+    }
 }

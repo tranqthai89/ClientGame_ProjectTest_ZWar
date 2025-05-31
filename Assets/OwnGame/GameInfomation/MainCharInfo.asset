@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dda9030b4521f8a45bae489c57a34513, type: 3}
   m_Name: MainCharInfo
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHp: 100
   moveSpeed: 5
   rotationSpeed: 180
   jumpHeight: 3
   detectionRadius: 7.5
   gunMachineInfo: {fileID: 11400000, guid: e00908eeaadf478488839b785e8c115f, type: 2}
+  prefab: {fileID: 6422218696999700113, guid: 9cc966575e2855b4ca258495c91d7aff, type: 3}

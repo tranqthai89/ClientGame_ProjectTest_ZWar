@@ -9,11 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c89eb3fd0ae267d4f960d3b77e7c05a1, type: 3}
-  m_Name: GunMachineInfo
+  m_Script: {fileID: 11500000, guid: 46f332c469e80324384e6ef6247d007e, type: 3}
+  m_Name: EnemyInfo_00
   m_EditorClassIdentifier: 
+  maxHp: 100
+  moveSpeed: 3.5
+  rotationSpeed: 360
   bulletValueDetail:
     damage: 5
-  atkSpeed: 10
-  bulletSpeed: 50
-  rangeShot: 15
+  power: 5
+  prefab: {fileID: 8893365159058347356, guid: 86cd9dd34bbfd8c4886f859efba4040d, type: 3}

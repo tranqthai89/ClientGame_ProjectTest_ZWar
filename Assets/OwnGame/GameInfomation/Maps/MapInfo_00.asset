@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c20c434f6213384e903a3d1b1ebe2c2, type: 3}
+  m_Name: MapInfo_00
+  m_EditorClassIdentifier: 
+  level: 0
+  totalWaves: 10
+  listEnemyRandom:
+  - enemyInfo: {fileID: 11400000, guid: 80e5d54e736e11140810c24f4a8612f6, type: 2}
+    limitAppearInWave: -1
+  wavePowBase: 100
+  wavePowFactor: 10
+  wavePowLambda: 2.4
+  miniWavePowBase: 30
+  miniWavePowFactor: 5
+  miniWavePowLambda: 2

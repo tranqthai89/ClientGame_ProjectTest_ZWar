@@ -1,9 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using GlobalEnum;
 
-public class PlayerController : MonoBehaviour
+public class MainCharController : CharController
 {
+    public override CharType charType => CharType.MainChar;
+
     [Header("Components")]
     [SerializeField] Rigidbody rb;
     [SerializeField] Animator animator;
@@ -17,53 +20,74 @@ public class PlayerController : MonoBehaviour
     [Header("Settings")]
     [SerializeField] LayerMask obstacleLayer;
     [SerializeField] LayerMask enemyLayer;
-    [SerializeField] float speed = 5;
-    [SerializeField] float rotSpeed = 5;
     [SerializeField] float gravity = -9.18f;
-    [SerializeField] float jumpHeight = 3f;
-    [SerializeField] float detectionRadius = 7.5f;
     [SerializeField] Color radarColor_Normal;
     [SerializeField] Color radarColor_Detecting;
 
+    float speed;
+    float rotSpeed;
+    float jumpHeight;
+    float detectionRadius;
+
     bool isGrounded;
-    enum State{
-        Idle, Walk
-    }
-    State state;
+    
+    public MainCharState CurrentState{get;set;}
     Transform target;
-    MainCharInfo mainCharInfo;
+    public MainCharInfo MyCharInfo{get;set;} // Thông tin về nhân vật chính
     GunController currentGun;
 
-    void Start()
+    void Awake()
     {
-        state = State.Idle;
-        radar.transform.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1f);
-        radar.color = radarColor_Normal;
-
-        rb.constraints = RigidbodyConstraints.FreezeRotation;
-
-        Init(GameInformation.Instance.mainCharInfo);
-        currentGun = machineGun;
+        ResetData();
     }
 
-    void Init(MainCharInfo _mainCharInfo)
+    public override void ResetData()
+    {
+        base.ResetData();
+        CurrentState = MainCharState.Idle;
+        MyCharInfo = null;
+        target = null;
+        isGrounded = false;
+
+        if (radar != null)
+        {
+            radar.color = radarColor_Normal;
+            radar.transform.localScale = Vector3.one; // Đặt kích thước ban đầu
+        }
+        model.rotation = Quaternion.identity; // Đặt hướng ban đầu của mô hình
+    }
+
+    public void Init(MainCharInfo _mainCharInfo)
     {
         if (_mainCharInfo == null)
         {
             Debug.LogError("MainCharInfo is null!");
             return;
         }
-        mainCharInfo = _mainCharInfo;
-        speed = mainCharInfo.moveSpeed;
-        rotSpeed = mainCharInfo.rotationSpeed;
-        jumpHeight = mainCharInfo.jumpHeight;
-        detectionRadius = mainCharInfo.detectionRadius;
+        MyCharInfo = _mainCharInfo;
 
-        machineGun.Init(mainCharInfo.gunMachineInfo);
+        CurrentHp = _mainCharInfo.maxHp;
+        speed = MyCharInfo.moveSpeed;
+        rotSpeed = MyCharInfo.rotationSpeed;
+        jumpHeight = MyCharInfo.jumpHeight;
+        detectionRadius = MyCharInfo.detectionRadius;
+
+        machineGun.Init(MyCharInfo.gunMachineInfo);
+        currentGun = machineGun;
+        
+        radar.transform.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1f);
+        radar.color = radarColor_Normal;
+
+        CanBeDamaged = true; // Cho phép nhân vật nhận sát thương
+        IsInstalled = true;
     }
 
     void Update()
     {
+        if(!IsInstalled || CurrentState == MainCharState.Die)
+        {
+            return;
+        }
         target = FindNearestEnemy();
 
         // Lấy đầu vào từ bàn phím
@@ -72,18 +96,18 @@ public class PlayerController : MonoBehaviour
 
         if (x == 0 && z == 0)
         {
-            if (state != State.Idle)
+            if (CurrentState != MainCharState.Idle)
             {
                 animator.SetTrigger("Idle");
-                state = State.Idle;
+                CurrentState = MainCharState.Idle;
             }
         }
         else
         {
-            if (state != State.Walk)
+            if (CurrentState != MainCharState.Move)
             {
-                animator.SetTrigger("Walk");
-                state = State.Walk;
+                animator.SetTrigger("Move");
+                CurrentState = MainCharState.Move;
             }
         }
 
@@ -96,20 +120,27 @@ public class PlayerController : MonoBehaviour
         if(target != null)
         {
             FaceTarget();
-            machineGun.Shoot();
+            currentGun.Shoot();
             radar.color = radarColor_Detecting;
-        }
-        else if (_move != Vector3.zero)
-        {
-            Vector3 direction = _move.normalized;
-            direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
-            model.forward = Vector3.Lerp(model.forward, direction, Time.deltaTime * rotSpeed);
-            gunContainer.forward = model.forward; // Cập nhật hướng của spawner theo hướng của model
-            radar.color = radarColor_Normal;
         }
         else
         {
+            if (_move != Vector3.zero)
+            {
+                Vector3 _direction = _move.normalized;
+                _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
+                if(_direction != Vector3.zero)
+                {
+                    model.forward = Vector3.Lerp(model.forward, _direction, Time.deltaTime * rotSpeed);
+                    gunContainer.forward = model.forward; // Cập nhật hướng của spawner theo hướng của model
+                }
+            }
             radar.color = radarColor_Normal;
+
+            if (Input.GetMouseButtonDown(0)) // Kiểm tra nếu chuột trái được nhấn
+            {
+                currentGun.Shoot();
+            }
         }
 
         // Xử lý nhảy
@@ -146,21 +177,23 @@ public class PlayerController : MonoBehaviour
         // }
         // return false;
     }
-    void FaceTarget()
+    private void FaceTarget()
     {
         if (target != null)
         {
             Vector3 _direction = (target.position - transform.position).normalized;
+            _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
             if(_direction != Vector3.zero)
             {
-                _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
-                Quaternion _lookRotation = Quaternion.LookRotation(_direction);
-                model.rotation = Quaternion.Lerp(model.rotation, _lookRotation, Time.deltaTime * rotSpeed);
-                gunContainer.rotation = model.rotation; // Cập nhật hướng của spawner theo hướng của model
+                model.forward = Vector3.Lerp(model.forward, _direction, Time.deltaTime * rotSpeed);
+                gunContainer.forward = model.forward;
+                // Quaternion _lookRotation = Quaternion.LookRotation(_direction);
+                // model.rotation = Quaternion.Lerp(model.rotation, _lookRotation, Time.deltaTime * rotSpeed);
+                // gunContainer.rotation = model.rotation; // Cập nhật hướng của spawner theo hướng của model
             }
         }
     }
-    public Transform FindNearestEnemy()
+    private Transform FindNearestEnemy()
     {
         Collider[] _colliders = Physics.OverlapSphere(transform.position, detectionRadius, enemyLayer);
         Transform _nearestEnemy = null;

@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using GlobalEnum;
 
 public class GunController : MonoBehaviour
 {
+    public virtual GunType gunType => GunType.Unknown;
+
     protected float shootDelay;
     protected float bulletSpeed;
     protected float lastShootTime;

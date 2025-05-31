@@ -13,3 +13,7 @@ MonoBehaviour:
   m_Name: GameInformation
   m_EditorClassIdentifier: 
   mainCharInfo: {fileID: 11400000, guid: d4098592708af4b418e0fb7f847f29b9, type: 2}
+  listEnemyInfo:
+  - {fileID: 11400000, guid: 80e5d54e736e11140810c24f4a8612f6, type: 2}
+  listMapInfo:
+  - {fileID: 11400000, guid: 1de05ba42f542634b8e1bb7c8a6c482f, type: 2}

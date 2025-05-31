@@ -4,6 +4,27 @@ using UnityEngine;
 
 namespace GlobalEnum{
     public enum GunType{
+        Unknown = 0,
         MachineGun,
+    }
+    public enum CharType{
+        Unknown = 0,
+        MainChar,
+        EnemyChar
+    }
+    public enum EnemyType{
+        Enemy_00 = 0,
+    }
+    public enum MainCharState{
+        Idle, Move, Die
+    }
+    public enum EnemyState{
+        Idle, Move, Die
+    }
+    public enum WaveState{
+        None, CreateWave, Finished
+    }
+    public enum GamePlayState{
+        PrepareToBattle, PlayGame, Finished
     }
 }
