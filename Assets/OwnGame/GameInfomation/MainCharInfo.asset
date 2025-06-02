@@ -17,5 +17,11 @@ MonoBehaviour:
   rotationSpeed: 180
   jumpHeight: 3
   detectionRadius: 7.5
-  gunMachineInfo: {fileID: 11400000, guid: e00908eeaadf478488839b785e8c115f, type: 2}
+  gunMachineValueDetail:
+    bulletValueDetail:
+      canPenetrated: 0
+      damage: 1
+    atkSpeed: 10
+    bulletSpeed: 50
+    rangeShot: 10
   prefab: {fileID: 6422218696999700113, guid: 9cc966575e2855b4ca258495c91d7aff, type: 3}

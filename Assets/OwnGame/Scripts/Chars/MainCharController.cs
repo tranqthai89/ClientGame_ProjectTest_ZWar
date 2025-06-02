@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using GlobalEnum;
 
 public class MainCharController : CharController
@@ -13,6 +14,11 @@ public class MainCharController : CharController
     [SerializeField] Transform model;
     [SerializeField] Transform gunContainer;
     [SerializeField] SpriteRenderer radar;
+
+    [Header("HP Bar")]
+    [SerializeField] CanvasGroup hpBarCanvasGroup; // CanvasGroup để điều chỉnh độ mờ của thanh máu
+    [SerializeField] Canvas hpBarCanvas; 
+    [SerializeField] Image hpBar_ImgFill; 
 
     [Header("Guns")]
     [SerializeField] MachineGunController machineGun;
@@ -32,9 +38,29 @@ public class MainCharController : CharController
     bool isGrounded;
     
     public MainCharState CurrentState{get;set;}
-    Transform target;
+    public int CurrentDamage{
+        get{
+            if(currentGun != null)
+            {
+                return currentGun.GunValueDetail.bulletValueDetail.damage;
+            }
+            return 0; // Trả về 0 nếu không có súng hiện tại
+        }
+    }
+    public float CurrentAtkSpeed{
+        get{
+            if(currentGun != null)
+            {
+                return currentGun.GunValueDetail.atkSpeed;
+            }
+            return 0f; // Trả về 0 nếu không có súng hiện tại
+        }
+    }
+    EnemyController target;
     public MainCharInfo MyCharInfo{get;set;} // Thông tin về nhân vật chính
     GunController currentGun;
+
+    IEnumerator process_Die;
 
     void Awake()
     {
@@ -48,6 +74,7 @@ public class MainCharController : CharController
         MyCharInfo = null;
         target = null;
         isGrounded = false;
+        hpBarCanvasGroup.alpha = 0f; // Đặt độ mờ của thanh máu về 100%
 
         if (radar != null)
         {
@@ -72,19 +99,20 @@ public class MainCharController : CharController
         jumpHeight = MyCharInfo.jumpHeight;
         detectionRadius = MyCharInfo.detectionRadius;
 
-        machineGun.Init(MyCharInfo.gunMachineInfo);
+        machineGun.Init(MyCharInfo.gunMachineValueDetail);
         currentGun = machineGun;
         
         radar.transform.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1f);
         radar.color = radarColor_Normal;
 
-        CanBeDamaged = true; // Cho phép nhân vật nhận sát thương
+        RefreshHpBar();
+
         IsInstalled = true;
     }
 
     void Update()
     {
-        if(!IsInstalled || CurrentState == MainCharState.Die)
+        if(!IsRunning || !IsInstalled || CurrentState == MainCharState.Die)
         {
             return;
         }
@@ -151,7 +179,17 @@ public class MainCharController : CharController
         }
         // Debug.Log(move + " - " + speed + " - " + isGrounded + " - " + velocity);
     }
-    public bool IsGrounded()
+    void LateUpdate()
+    {
+        if(!IsRunning || !IsInstalled)
+        {
+            return;
+        }
+        hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
+        hpBarCanvas.transform.LookAt(Camera.main.transform);
+        hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
+    }
+    private bool IsGrounded()
     {
         // Kiểm tra bằng Raycast trước (nhanh hơn và ít tốn tài nguyên)
         // if (Physics.Raycast(transform.position, Vector3.down, 1.1f, groundLayer))
@@ -181,7 +219,7 @@ public class MainCharController : CharController
     {
         if (target != null)
         {
-            Vector3 _direction = (target.position - transform.position).normalized;
+            Vector3 _direction = (target.PosOfDetect - transform.position).normalized;
             _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
             if(_direction != Vector3.zero)
             {
@@ -193,22 +231,27 @@ public class MainCharController : CharController
             }
         }
     }
-    private Transform FindNearestEnemy()
+    private EnemyController FindNearestEnemy()
     {
         Collider[] _colliders = Physics.OverlapSphere(transform.position, detectionRadius, enemyLayer);
-        Transform _nearestEnemy = null;
+        EnemyController _nearestEnemy = null;
         float _minDistance = Mathf.Infinity;
-
+    
         foreach (Collider _collider in _colliders)
         {
+            EnemyController _enemyController = _collider.transform.parent.GetComponent<EnemyController>();
+            if(_enemyController == null || _enemyController.CurrentState == EnemyState.Die)
+            {
+                continue; // Bỏ qua nếu không phải là EnemyController hoặc đã chết
+            }
             // float distance = (_collider.transform.position - transform.position).sqrMagnitude;
             // if (distance < _minDistance)
             // {
             //     _minDistance = distance;
             //     _nearestEnemy = _collider.transform;
             // }
-            Vector3 _directionToTarget = (_collider.transform.position - transform.position).normalized;
-            float _distanceToTarget = Vector3.Distance(transform.position, _collider.transform.position);
+            Vector3 _directionToTarget = (_enemyController.PosOfDetect - transform.position).normalized;
+            float _distanceToTarget = Vector3.Distance(transform.position, _enemyController.PosOfDetect);
 
             // Kiểm tra xem có vật cản giữa nhân vật và mục tiêu không
             if (!Physics.Raycast(transform.position, _directionToTarget, _distanceToTarget, obstacleLayer))
@@ -216,16 +259,70 @@ public class MainCharController : CharController
                 if (_distanceToTarget < _minDistance)
                 {
                     _minDistance = _distanceToTarget;
-                    _nearestEnemy = _collider.transform;
+                    _nearestEnemy = _enemyController;
                 }
             }
         }
 
         return _nearestEnemy;
     }
-    // void OnTriggerEnter(Collider other) {
-    //     Debug.Log("OnTriggerEnter | Va chạm với: " + other.gameObject.name);
-    // }
+    public void TakeDamage(int _damage)
+    {
+        if(!CanBeDamaged)
+        {
+            return; // Nếu không thể nhận sát thương, không làm gì cả
+        }
+        CurrentHp -= _damage;
+        hpBarCanvasGroup.alpha = 1f; // Hiển thị thanh máu khi bị tấn công
+        RefreshHpBar();
+        if(CurrentHp <= 0)
+        {
+            SetUpDie(); // Gọi hàm Die nếu máu <= 0
+        }
+    }
+    public void RefreshHpBar()
+    {
+        if (MyCharInfo.maxHp > 0)
+        {
+            hpBar_ImgFill.fillAmount = (float) CurrentHp / MyCharInfo.maxHp;
+        }
+    }
+    public void SetUpDie()
+    {
+        if (CurrentState == MainCharState.Die)
+        {
+            return; // Nếu đã chết, không làm gì cả
+        }
+        process_Die = DoProcess_Die();
+        StartCoroutine(process_Die);
+    }
+    IEnumerator DoProcess_Die()
+    {
+        CurrentState = MainCharState.Die;
+        hpBarCanvasGroup.alpha = 0f;
+        OnDie?.Invoke(this); // Gọi callback khi chết
+
+        //TODO: Diễn animation chết ...
+
+        yield break;
+    }
+    
+    void OnTriggerEnter(Collider other) {
+        if (CurrentState == MainCharState.Die) {
+            return; // Không xử lý va chạm nếu đã chết
+        }
+        // Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
+        if(other.tag.Equals("Bullet")){
+            BulletController _bullet = other.transform.parent.GetComponent<BulletController>();
+            if(_bullet != null){
+                TakeDamage(_bullet.bulletValueDetail.damage);
+                if(!_bullet.bulletValueDetail.canPenetrated){
+                    // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
+                    _bullet.SelfDestruction();
+                }
+            }
+        }
+    }
     // void OnCollisionEnter(Collision collision) {
     //     Debug.Log("OnCollisionEnter | Va chạm với: " + collision.gameObject.name);
     // }

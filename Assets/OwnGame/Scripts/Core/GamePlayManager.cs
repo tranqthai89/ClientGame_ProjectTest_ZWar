@@ -9,6 +9,9 @@ public class GamePlayManager : MonoBehaviour
 {
     public static GamePlayManager Instance{get;set;}
 
+    [Header("UIManager")]
+    public GamePlay_UIManager UIManager;
+
     [Header("Components")]
     public WaveManager waveManager;
     public CinemachineVirtualCamera virtualCamera;
@@ -18,8 +21,7 @@ public class GamePlayManager : MonoBehaviour
     public MySimplePoolManager enemyPoolManager;
     public MySimplePoolManager mainCharPoolManager;
 
-    public MainCharController MainChar{get;set;}
-    public GameDataControl CurrentGameDataControl{get;set;}
+    public GameControl currentGameControl;
 
     void Awake()
     {
@@ -42,7 +44,7 @@ public class GamePlayManager : MonoBehaviour
 
     public void Init()
     {
-        CurrentGameDataControl = new GameDataControl();
+        currentGameControl = new GameControl();
     }
 
     #region Ultilities

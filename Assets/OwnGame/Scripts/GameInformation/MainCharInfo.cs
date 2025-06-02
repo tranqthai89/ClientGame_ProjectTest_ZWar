@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using GlobalEnum;
+using GlobalClass;
 
 [CreateAssetMenu(fileName = "MainCharInfo", menuName="GameInfo/MainCharInfo")]
 public class MainCharInfo : CharInfo
@@ -11,7 +12,7 @@ public class MainCharInfo : CharInfo
     public float jumpHeight;
     public float detectionRadius;
 
-    public GunInfo gunMachineInfo;
+    public GunValueDetail gunMachineValueDetail;
 
     [Header("Prefab")]
     public MainCharController prefab;

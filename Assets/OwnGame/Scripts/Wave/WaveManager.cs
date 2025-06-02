@@ -48,10 +48,7 @@ public class WaveManager : MonoBehaviour
     }
     #endregion
 
-    [SerializeField] List<Transform> listSpawnPoints;
-
-    [Header("Containers")]
-    public Transform waveContainer;
+    public List<Transform> listSpawnPoints;
     
     public MapInfo CurrentMapInfo{get;set;}
     public WaveState CurrentState{get;set;}
@@ -61,10 +58,10 @@ public class WaveManager : MonoBehaviour
     public long LevelMap{get;set;} // Mức độ của bản đồ hiện tại
     public int IndexWave{get;set;}
 
-    IEnumerator actionRun;
+    IEnumerator process_Run;
     public bool IsRunning{
         get{
-            if(actionRun != null){
+            if(process_Run != null){
                 return true;
             }
             return false;
@@ -80,7 +77,7 @@ public class WaveManager : MonoBehaviour
     }
     public void ResetData(){
         StopAllCoroutines();
-        actionRun = null;
+        process_Run = null;
 
         CurrentState = WaveState.None;
         IndexWave = 0;
@@ -111,21 +108,20 @@ public class WaveManager : MonoBehaviour
         
         return StartCoroutine(DoProcessInit());
     }
-
     IEnumerator DoProcessInit(){
         CatchWave();
         yield break;
     }
-
     void CatchWave(){
         string _functionName = "WaveManager | CatchWave";
         int _startHugeWave = 0;
         for(int _indexWave = 0; _indexWave < CurrentMapInfo.totalWaves; _indexWave ++){
-            WaveCatchedInfo _tmpWave = GetWaveCatched(_indexWave, CurrentMapInfo.listEnemyRandom);
             if(_indexWave == CurrentMapInfo.totalWaves - 1){ // final Wave
                 // final Wave
-                _startHugeWave = GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemy;
+                _startHugeWave = GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemy;
             }
+            
+            WaveCatchedInfo _tmpWave = GetWaveCatched(_indexWave, CurrentMapInfo.listEnemyRandom);
             if(_tmpWave != null && _tmpWave.listMiniWaveCatched.Count > 0){
                 ListWaveCatchedInfo.Add(_tmpWave);
             }else{
@@ -133,9 +129,9 @@ public class WaveManager : MonoBehaviour
             }
         }
 
-        GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.ratioStartFinalWave = (float) _startHugeWave / (float) GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemy;
+        GamePlayManagerInstance.currentGameControl.collectionInfo.ratioStartFinalWave = (float) _startHugeWave / (float) GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemy;
 
-        Debug.Log("totalEnemy: " + GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemy + " | startHugeWave: " + _startHugeWave);
+        Debug.Log("totalEnemy: " + GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemy + " | startHugeWave: " + _startHugeWave);
     }
     WaveCatchedInfo GetWaveCatched(int _indexWave, List<MapInfo.EnemyInWave> _listEnemyRandom){
         if(_listEnemyRandom == null || _listEnemyRandom.Count == 0){
@@ -184,7 +180,7 @@ public class WaveManager : MonoBehaviour
                 EnemyInWaveCatched _enemyCatched = new EnemyInWaveCatched(_listEnemyRandom[_rdIndex].enemyInfo, _powEnemy);
                 _miniWaveCatched.AddEnemyCatched(_enemyCatched);
                 
-                GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemy ++;
+                GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemy ++;
             }
 
             _tmpWave.AddMiniWaveCatched(_miniWaveCatched);
@@ -199,36 +195,71 @@ public class WaveManager : MonoBehaviour
             #endif
             return null;
         }
-        if(actionRun != null){
+        if(process_Run != null){
             #if TEST
             Debug.LogError("actionRun đang chạy!");
             #endif
             return null;
         }
+
+        process_Run = DoProcess_Run();
+        return StartCoroutine(process_Run);
+    }
+
+    IEnumerator DoProcess_Run()
+    {
+        if(GamePlayManagerInstance.currentGameControl.OnStartMap!= null){
+            GamePlayManagerInstance.currentGameControl.OnStartMap();
+        }
+
         IndexWave = 0;
-        
-        return StartCoroutine(actionRun);
-    }
+        CurrentWave = null;
+        CurrentState = WaveState.CreateWave;
 
-    IEnumerator DoProcess_Test()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(1f);
-            SpawnEnemy();
+        while(IndexWave < ListWaveCatchedInfo.Count){
+            if(CurrentWave == null){
+                CurrentWave = new WaveController();
+                CurrentWave.Init(ListWaveCatchedInfo[IndexWave], IndexWave);
+                if(GamePlayManagerInstance.currentGameControl.OnStartNewWave != null){
+                    GamePlayManagerInstance.currentGameControl.OnStartNewWave(LevelMap, IndexWave);
+                }
+            }
+            CurrentWave.Run();
+
+            yield return new WaitUntil(()=>(!CurrentWave.IsRunning() || GamePlayManagerInstance.currentGameControl.mainChar.CurrentState == MainCharState.Die));
+            if(GamePlayManagerInstance.currentGameControl.mainChar.CurrentHp <= 0){
+                break;
+            }
+            if(GamePlayManagerInstance.currentGameControl.OnCurrentWaveFinished != null){
+                GamePlayManagerInstance.currentGameControl.OnCurrentWaveFinished(LevelMap, IndexWave);
+            }
+            CurrentWave.Stop();
+            CurrentWave = null;
+            IndexWave ++;
+            if(IndexWave == ListWaveCatchedInfo.Count - 1){
+                Debug.Log("<color=red>Final wave: " + IndexWave + " : " +  ListWaveCatchedInfo.Count+ "</color>");
+                // yield return Yielders.Get(1f);
+                // gamePlayManager.UIManager.panelWarning.Show("Final Wave", false);
+                // yield return Yielders.Get(1f);
+                // gamePlayManager.UIManager.panelWarning.Hide(false);
+                // yield return Yielders.Get(0.5f);
+            }
+        }
+        CurrentState = WaveState.Finished;
+        if(GamePlayManagerInstance.currentGameControl.OnRunMapFinished!= null){
+            GamePlayManagerInstance.currentGameControl.OnRunMapFinished();
+        }
+        yield return new WaitForSeconds(2f);
+        if(GamePlayManagerInstance.currentGameControl.OnSetDataWhenFinish!= null){
+            GamePlayManagerInstance.currentGameControl.OnSetDataWhenFinish();
+        }
+        yield return new WaitForSeconds(1f);
+
+        process_Run = null;
+
+        if(GamePlayManagerInstance.currentGameControl.OnWaveManagerFinished != null){
+            GamePlayManagerInstance.currentGameControl.OnWaveManagerFinished();
         }
     }
-    void SpawnEnemy()
-    {
-        if (listSpawnPoints.Count == 0)
-        {
-            Debug.LogWarning("No spawn points available.");
-            return;
-        }
-
-        Transform _spawnPoint = listSpawnPoints[UnityEngine.Random.Range(0, listSpawnPoints.Count)];
-        EnemyInfo _enemyInfo = GameInformation.Instance.listEnemyInfo[UnityEngine.Random.Range(0, GameInformation.Instance.listEnemyInfo.Count)];
-        EnemyController _enemy = GamePlayManager.Instance.CreateEnemy(_enemyInfo.prefab, _spawnPoint.position, _spawnPoint.rotation);
-        _enemy.Init(_enemyInfo);
-    }
+    
 }

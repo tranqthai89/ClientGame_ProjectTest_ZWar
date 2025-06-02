@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c20c434f6213384e903a3d1b1ebe2c2, type: 3}
   m_Name: MapInfo_00
   m_EditorClassIdentifier: 
-  level: 0
-  totalWaves: 10
+  level: 1
+  totalWaves: 5
   listEnemyRandom:
   - enemyInfo: {fileID: 11400000, guid: 80e5d54e736e11140810c24f4a8612f6, type: 2}
     limitAppearInWave: -1

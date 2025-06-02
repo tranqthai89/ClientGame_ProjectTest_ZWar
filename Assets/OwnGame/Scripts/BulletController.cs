@@ -40,7 +40,9 @@ public class BulletController : MySimplePoolObjectController
         return StartCoroutine(process_Move);
     }
     IEnumerator DoProcess_Move()
-    {
+    {   
+        if(speed == 0){yield break;}
+
         Vector3 _startPosition = transform.position;
         Vector3 _hitPoint = _startPosition + transform.forward * maxRangeMove;
         float _distance = Vector3.Distance(transform.position, _hitPoint);
@@ -67,7 +69,9 @@ public class BulletController : MySimplePoolObjectController
     }
     void OnTriggerEnter(Collider other) {
         // Debug.Log("OnTriggerEnter | Va chạm với: " + other.gameObject.name);
-        MySimplePoolObjectController _effectHit = GamePlayManager.Instance.CreateEffect(effectHitPrefab, transform.position, Quaternion.identity);
+        if(effectHitPrefab != null){
+            ZWar.EffectController _effectHit = GamePlayManager.Instance.CreateEffect(effectHitPrefab, transform.position, Quaternion.identity);
+        }
         if(other.tag.Equals("Obstacle") || other.tag.Equals("Obstacle")){
             SelfDestruction();
         }

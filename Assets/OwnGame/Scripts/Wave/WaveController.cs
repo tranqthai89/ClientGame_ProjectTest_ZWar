@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using GlobalEnum;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ public class WaveController
             return GamePlayManagerInstance.waveManager;
         }
     }
-    IEnumerator actionRun;
+    IEnumerator process_Run;
     WaveManager.WaveCatchedInfo waveCatchedInfo;
     int indexWave;
 
@@ -24,107 +25,113 @@ public class WaveController
         indexWave = _indexWave;
     }
     public bool IsRunning(){
-        if(actionRun != null){
+        if(process_Run != null){
             return true;
         }
         return false;
     }
     public Coroutine Run(){
-        if(actionRun != null){
+        if(process_Run != null){
             return null;
         }
-        actionRun = DoActionRun();
-        return WaveManagerInstance.StartCoroutine(actionRun);
+        process_Run = DoProcess_Run();
+        return WaveManagerInstance.StartCoroutine(process_Run);
     }
-    public virtual IEnumerator DoActionRun(){
+    private IEnumerator DoProcess_Run(){
         if(waveCatchedInfo.listMiniWaveCatched.Count == 0){
-            actionRun = null;
+            process_Run = null;
             yield break;
         }
         Debug.Log("Start Wave " + indexWave + " | pow: " + waveCatchedInfo.powCatched);
 
-        bool _firstSummonned = false;
-
         Vector3 _posEnemy = Vector3.zero;
-        float _tmpPosZ = 0f;
         EnemyController _tmpMonsterPrefab = null;
         EnemyController _tmpEnemyController = null;
-        List<WaveManager.EnemyInWaveCatched> _listEnemyInWaveCollected = new List<WaveManager.EnemyInWaveCatched>();
+        List<WaveManager.EnemyInWaveCatched> _listEnemyInWaveCollected = null;
         WaveManager.EnemyInWaveCatched _currentEnemyInWave = null;
 
-        // for(int i = 0; i < waveCatchedInfo.listMiniWaveCatched.Count; i ++){
-        //     // - Create enemy - //
-        //     Debug.Log("Start MiniWave " + indexWave + " - " + i + " | pow: " + waveCatchedInfo.listMiniWaveCatched[i].powCatched);
+        for(int i = 0; i < waveCatchedInfo.listMiniWaveCatched.Count; i ++){
+            // - Create enemy - //
+            Debug.Log("Start MiniWave " + indexWave + " - " + i + " | pow: " + waveCatchedInfo.listMiniWaveCatched[i].powCatched);
 
-        //     while(waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.Count > 0 || _listEnemyInWaveCollected.Count > 0){
-        //         yield return null;
-        //         if(WaveManagerInstance.CurrentState == WaveState.Finished){
-        //             break;
-        //         }
-        //         if(_listEnemyInWaveCollected.Count == 0){
-        //             _listEnemyInWaveCollected.Add(waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched[0]);
-        //             waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.RemoveAt(0);
+            if(WaveManagerInstance.CurrentState == WaveState.Finished){
+                break;
+            }
+            if(waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.Count == 0){
+                Debug.Log("[0] No enemy in miniwave " + i + " | indexWave: " + indexWave);
+                break;
+            }
+            if(_listEnemyInWaveCollected == null){
+                _listEnemyInWaveCollected = new List<WaveManager.EnemyInWaveCatched>();
+            }else{
+                _listEnemyInWaveCollected.Clear();
+            }
+            for(int j = 0; j < waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.Count; j ++){
+                _listEnemyInWaveCollected.Add(waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched[j]);
 
-        //             for(int j = 0; j < waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.Count; j ++){
-        //                 _listEnemyInWaveCollected.Add(waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched[j]);
+                waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.RemoveAt(j);
+                j--;
+                continue;
+            }
+            // - 1 lần summon sẽ spawn enemy trong wave này, random 10 cửa
+            // - delay 1 khoảng thời gian rồi spawn tiếp
+            // - Giới hạn tối đa trên màn hình chỉ 50 con quái
+            if(_listEnemyInWaveCollected.Count == 0){
+                Debug.Log("[1] No enemy in miniwave " + i + " | indexWave: " + indexWave);
+                break;
+            }
+            List<Transform> _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+            if(_listSpawnPoints.Count == 0){
+                Debug.LogError("No spawn points available.");
+                break;
+            }
+            int _maxSpawnPointCount = Mathf.Min(10, _listSpawnPoints.Count);
+            int _tmpCount = 0;
+            for (int j = 0; j < _listEnemyInWaveCollected.Count; j++){
+                // - Giới hạn tối đa trên màn hình chỉ 50 con quái
+                if(GamePlayManagerInstance.enemyPoolManager.listObjects.Count >= 50){
+                    yield return null;
+                    continue;
+                }
+                _currentEnemyInWave = _listEnemyInWaveCollected[j];
+                _tmpMonsterPrefab = _currentEnemyInWave.enemyInfo.prefab;
 
-        //                 waveCatchedInfo.listMiniWaveCatched[i].listEnemyInWaveCatched.RemoveAt(j);
-        //                 j--;
-        //                 continue;
-        //             }
-        //         }
-        //         if(!_firstSummonned){
-        //             _timeSummon += Time.deltaTime;
-        //         }else{
-        //             if(GamePlayManagerInstance.enemyPoolManager.listObjects.Count == 0){
-        //                 if(_timeSummon + Time.deltaTime < _nextTimeToSummon){
-        //                     _timeSummon += Time.deltaTime;
-        //                 }else{
-        //                     _timeSummon = _nextTimeToSummon;
-        //                 }
-        //             }else{
-        //                 _timeSummon += Time.deltaTime;
-        //             }
-        //         }
-        //         if(_timeSummon >= _nextTimeToSummon){
-        //             for (int j = 0; j < _listEnemyInWaveCollected.Count; j++){
-        //                 // - Giới hạn tối đa trên màn hình chỉ 50 con quái
-        //                 if(GamePlayManagerInstance.enemyPoolManager.listObjects.Count > 50){
-        //                     yield return null;
-        //                     continue;
-        //                 }
-        //                 _currentEnemyInWave = _listEnemyInWaveCollected[j];
+                int _indexSpawnPoint = UnityEngine.Random.Range(0, _listSpawnPoints.Count);
+                Transform _spawnPoint = _listSpawnPoints[_indexSpawnPoint];
+                _tmpEnemyController = GamePlayManager.Instance.CreateEnemy(_tmpMonsterPrefab, _spawnPoint.position, _spawnPoint.rotation);
+                _tmpEnemyController.Init(_listEnemyInWaveCollected[j].enemyInfo);
+                _tmpEnemyController.Run();
 
-        //                 _tmpMonsterPrefab = (EnemyController) _currentEnemyInWave.enemyInfo.modelPrefab.Load();
+                _listSpawnPoints.RemoveAt(_indexSpawnPoint); // Xóa spawn point đã sử dụng
+                
+                if(GamePlayManagerInstance.currentGameControl.OnEnemySpawned != null){
+                    GamePlayManagerInstance.currentGameControl.OnEnemySpawned(_tmpEnemyController);
+                }
+                
+                _tmpCount ++;
 
-        //                 // - Set vị trí của enemy cách vị trí của main 5 unit theo hình tròn
-        //                 int _rdAngle = MyConstant.random.Next(0, 360);
-        //                 Quaternion _desiredRot = Quaternion.Euler (0, 0, _rdAngle);
-        //                 _posEnemy = GamePlayManagerInstance.placeHolder_MainChar.transform.position;
-        //                 Vector3 _velocity = new Vector3 (0, 4f, 0f); // set theo trục y
-        //                 _posEnemy += _desiredRot * _velocity;
-        //                 _posEnemy.z = _tmpPosZ;
-                        
-        //                 // - Spawn Enemy
-        //                 _tmpEnemyController = GamePlayManagerInstance.CreateSimplePoolObject(_tmpMonsterPrefab, _posEnemy, GamePlayManagerInstance.enemyPoolManager, GamePlayManagerInstance.enemyContainer);
-        //                 _tmpEnemyController.Init(_currentEnemyInWave.enemyInfo, _currentEnemyInWave.level);
-        //                 _tmpEnemyController.Run();
-                        
-        //                 if(GamePlayManagerInstance.currentGameModeControl.OnEnemySpawned != null){
-        //                     GamePlayManagerInstance.currentGameModeControl.OnEnemySpawned(_tmpEnemyController);
-        //                 }
-                        
-        //                 _tmpPosZ += 0.1f;
-        //                 _firstSummonned = true;
-        //             }
-
-        //             _listEnemyInWaveCollected.Clear();
-        //         }
-        //     }
-        //     yield return new WaitUntil(()=>GamePlayManagerInstance.enemyPoolManager.listObjects.Count == 0);
-        // }
+                if(_listSpawnPoints.Count == 0){
+                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                    yield return new WaitForSeconds(1f); // Chờ một khoảng thời gian trước khi spawn tiếp
+                }else if(_tmpCount >= _maxSpawnPointCount){ // Giới hạn tối đa 10 con quái mỗi lần spawn
+                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                    _tmpCount = 0;
+                    yield return new WaitForSeconds(1f); // Chờ một khoảng thời gian trước khi spawn tiếp
+                }else if(GamePlayManagerInstance.enemyPoolManager.listObjects.Count >= 50){
+                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                }
+            }
+            yield return new WaitUntil(()=>GamePlayManagerInstance.enemyPoolManager.listObjects.Count == 0);
+        }
         
-        actionRun = null;
+        process_Run = null;
         yield break;
+    }
+
+    public void Stop(){
+        if(process_Run != null){
+            WaveManagerInstance.StopCoroutine(process_Run);
+            process_Run = null;
+        }
     }
 }

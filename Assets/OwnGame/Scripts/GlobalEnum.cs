@@ -6,6 +6,7 @@ namespace GlobalEnum{
     public enum GunType{
         Unknown = 0,
         MachineGun,
+        GunBaseOnAnimation
     }
     public enum CharType{
         Unknown = 0,
@@ -19,7 +20,10 @@ namespace GlobalEnum{
         Idle, Move, Die
     }
     public enum EnemyState{
-        Idle, Move, Die
+        Idle, Move, Die, Attack
+    }
+    public enum Enemy_StateAnimation{
+        Idle, Move, Die, Attack
     }
     public enum WaveState{
         None, CreateWave, Finished

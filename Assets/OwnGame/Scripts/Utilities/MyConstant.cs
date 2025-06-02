@@ -4,5 +4,23 @@ using UnityEngine;
 
 public static class MyConstant
 {
-    
+    public static T[] ShallowCopy<T>(this T[] _originalMatrix)
+		{
+			T[] _dataClone = new T[_originalMatrix.Length];
+			for (int i = 0; i < _originalMatrix.Length; i++)
+			{
+				_dataClone[i] = _originalMatrix[i];
+			}
+			return _dataClone;
+		}
+		public static List<T> ShallowCopy<T>(this List<T> _originalMatrix)
+		{
+			List<T> _dataClone = new List<T>();
+			for (int i = 0; i < _originalMatrix.Count; i++)
+			{
+				_dataClone.Add(_originalMatrix[i]);
+			}
+			return _dataClone;
+		}
+
 }

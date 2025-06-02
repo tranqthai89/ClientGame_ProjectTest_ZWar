@@ -21,7 +21,7 @@ TagManager:
   - Player
   - Enemy
   - Player's Bullet
-  - 
+  - Enemy's Bullet
   - 
   - 
   - 
@@ -48,4 +48,7 @@ TagManager:
     locked: 0
   - name: UI_HPBar
     uniqueID: 1072341341
+    locked: 0
+  - name: UI
+    uniqueID: 2610594945
     locked: 0

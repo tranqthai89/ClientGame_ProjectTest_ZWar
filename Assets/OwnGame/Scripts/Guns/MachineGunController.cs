@@ -11,9 +11,6 @@ public class MachineGunController : GunController
 
     [SerializeField]
     private ParticleSystem particleSystem_Shoot;
-
-    [SerializeField]
-    private Transform bulletSpawnPoint;
     
     [Header("Prefabs")]
     // [SerializeField] private MySimplePoolObjectController bulletTrailPrefab;
@@ -48,8 +45,8 @@ public class MachineGunController : GunController
     }
 
     private void SpawnBullet(){
-        BulletController _bullet = GamePlayManager.Instance.CreateBullet(bulletPrefab, bulletSpawnPoint.position, bulletSpawnPoint.rotation);
-        _bullet.Init(gunInfo.bulletValueDetail, bulletSpeed, gunInfo.rangeShot);
+        BulletController _bullet = GamePlayManager.Instance.CreateBullet(bulletPrefab, bulletSpawnPoint.position, myCompass.rotation);
+        _bullet.Init(GunValueDetail.bulletValueDetail, bulletSpeed, GunValueDetail.rangeShot);
         _bullet.Move();
     }
 

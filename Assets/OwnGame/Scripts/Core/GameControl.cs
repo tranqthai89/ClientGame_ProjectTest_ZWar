@@ -9,7 +9,7 @@ using Lean.Pool;
 using System.Collections;
 using DevToolkit;
 
-public class GameDataControl
+public class GameControl
 {
     public GamePlayManager GamePlayManagerInstance{
         get{
@@ -18,6 +18,8 @@ public class GameDataControl
     }
     public CollectionInfo collectionInfo;
     public GamePlayState currentState;
+
+    public MainCharController mainChar;
 
     public int currentLevelMap;
 
@@ -31,7 +33,7 @@ public class GameDataControl
     public System.Action<EnemyController> OnEnemySpawned;
     public System.Action<EnemyController> OnEnemyDie;
 
-    public GameDataControl(){
+    public GameControl(){
         collectionInfo = new CollectionInfo();
         currentLevelMap = 0;
         currentState = GamePlayState.PrepareToBattle;
@@ -41,31 +43,47 @@ public class GameDataControl
     public void InitCallback(){
         ResetAllCallback();
 
+        OnStartMap = ()=>{
+            Debug.Log("Start Map");
+            GamePlayManagerInstance.UIManager.RefreshAllUI();
+            GamePlayManagerInstance.UIManager.ShowPanelStartGame();
+        };
+
         OnStartGame = ()=>{
             currentState = GamePlayState.PlayGame;
+            mainChar.Run();
             GamePlayManagerInstance.waveManager.Run();
         };
         OnStartNewWave = (_levelMap, _indexWave) =>{
             Debug.Log("Start New Wave: " + _levelMap + " - " + _indexWave);
+            GamePlayManagerInstance.UIManager.RefreshUI_IndexWaveInfo();
         };
         OnCurrentWaveFinished = (_levelMap, _indexWave) => {
             Debug.Log("Wave Finished: " + _levelMap + " - " + _indexWave);
         };
         OnEnemySpawned = (_enemy)=>{
             Debug.Log("Spawn Enemy: " + _enemy.MyCharInfo.enemyType + " | pow : " + _enemy.MyCharInfo.power);
-            GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemySpawned ++;
+            GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemySpawned ++;
         };
         OnEnemyDie = (_enemy)=>{
-            GamePlayManagerInstance.CurrentGameDataControl.collectionInfo.totalEnemyDie ++;
+            GamePlayManagerInstance.currentGameControl.collectionInfo.totalEnemyDie ++;
+
+            GamePlayManagerInstance.UIManager.RefreshUI_EnemyInfo();
         };
         OnRunMapFinished = ()=>{
             Debug.Log("Map Finished");
             currentState = GamePlayState.Finished;
+
+            if(mainChar.CurrentState != MainCharState.Die){
+                GamePlayManagerInstance.UIManager.ShowPanelFinishGame();
+            }else{
+                GamePlayManagerInstance.UIManager.ShowPanelFailure();
+            }
         };
         OnSetDataWhenFinish = ()=>{
             Debug.Log("Set Data When Finish");
             
-            if(GamePlayManagerInstance.MainChar.CurrentState != MainCharState.Die){
+            if(mainChar.CurrentState != MainCharState.Die){
                 if(currentLevelMap + 1 < GameInformation.Instance.listMapInfo.Count){
                     currentLevelMap ++; // tăng level map lên
                 }
@@ -80,6 +98,7 @@ public class GameDataControl
         OnWaveManagerFinished = ()=>{
             // Khi kết thúc thì cho lặp lại từ đầu, data đã xử lý ở trên
             Debug.Log("Wave Manager Finish");
+            GamePlayManagerInstance.UIManager.HideAllPanels();
             GamePlayManagerInstance.StartCoroutine(DoActionPrepareToBattle());
         };
     }
@@ -96,6 +115,8 @@ public class GameDataControl
     }
     protected IEnumerator DoActionPrepareToBattle(){
         currentState = GamePlayState.PrepareToBattle;
+
+        GamePlayManagerInstance.UIManager.HideAllPanels();
 
         collectionInfo = new CollectionInfo();
         GamePlayManagerInstance.mainCharPoolManager = new MySimplePoolManager();
@@ -114,14 +135,14 @@ public class GameDataControl
     }
     protected IEnumerator DoActionInitMainChar(){
         yield return new WaitForEndOfFrame();
-        GamePlayManagerInstance.MainChar = LeanPool.Spawn(GameInformation.Instance.mainCharInfo.prefab, Vector3.zero, Quaternion.identity);
-        GamePlayManagerInstance.MainChar.Init(GameInformation.Instance.mainCharInfo);
-        GamePlayManagerInstance.MainChar.onSelfDestruction = (_o) => {
+        mainChar = LeanPool.Spawn(GameInformation.Instance.mainCharInfo.prefab, Vector3.zero, Quaternion.identity);
+        mainChar.Init(GameInformation.Instance.mainCharInfo);
+        mainChar.onSelfDestruction = (_o) => {
             GamePlayManagerInstance.mainCharPoolManager.RemoveObjectsNow(_o);
         };
-        GamePlayManagerInstance.mainCharPoolManager.AddObject(GamePlayManagerInstance.MainChar);
+        GamePlayManagerInstance.mainCharPoolManager.AddObject(mainChar);
 
-        GamePlayManagerInstance.virtualCamera.Follow = GamePlayManagerInstance.MainChar.transform;
-        GamePlayManagerInstance.virtualCamera.LookAt = GamePlayManagerInstance.MainChar.transform;
+        GamePlayManagerInstance.virtualCamera.Follow = mainChar.transform;
+        GamePlayManagerInstance.virtualCamera.LookAt = mainChar.transform;
     }
 }

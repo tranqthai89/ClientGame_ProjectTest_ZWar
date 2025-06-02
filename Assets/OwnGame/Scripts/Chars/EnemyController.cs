@@ -9,7 +9,8 @@ public class EnemyController : CharController
     public override CharType charType => CharType.EnemyChar;
     
     [Header("Components")]
-    [SerializeField] Animator animator; // Animator để điều khiển hoạt ảnh
+    [SerializeField] EnemyAnimationController myAnimation;
+    [SerializeField] Transform model; 
     [SerializeField] NavMeshAgent agent;
 
     [Header("HP Bar")]
@@ -17,9 +18,12 @@ public class EnemyController : CharController
     [SerializeField] Canvas hpBarCanvas; 
     [SerializeField] Image hpBar_ImgFill; 
 
+    [Header("Guns")]
+    [SerializeField] GunController myGun; // Súng của kẻ địch
+
     public EnemyInfo MyCharInfo{get;set;} // Thông tin về kẻ địch
     public EnemyState CurrentState { get; set; } // Trạng thái hiện tại của kẻ địch
-    Transform target; // Đối tượng nhân vật cần đuổi theo
+    MainCharController target; // Đối tượng nhân vật cần đuổi theo
 
     IEnumerator process_Die;
 
@@ -32,9 +36,14 @@ public class EnemyController : CharController
     public override void ResetData()
     {
         base.ResetData();
+        agent.isStopped = true;
+
         MyCharInfo = null;
         CurrentState = EnemyState.Idle;
         hpBarCanvasGroup.alpha = 0f; // Đặt độ mờ của thanh máu về 100%
+
+        model.transform.localRotation = Quaternion.identity;
+        model.transform.localPosition = Vector3.zero;
     }
 
     void Awake() {
@@ -52,43 +61,72 @@ public class EnemyController : CharController
         agent.speed = MyCharInfo.moveSpeed;
         agent.angularSpeed = MyCharInfo.rotationSpeed;
 
+        myGun.Init(MyCharInfo.gunValueDetail); // Khởi tạo súng của kẻ địch
+        myAnimation.onCreateDmg = ()=>{
+            if(target == null || target.CurrentState == MainCharState.Die){
+                return;
+            }
+            myGun.Shoot(target.PosOfDetect);
+        };
+
+        OnDie += (_enemy) => {
+            // Xử lý khi kẻ địch chết
+            GamePlayManager.Instance.currentGameControl.OnEnemyDie((EnemyController) _enemy);
+        };
+    
         RefreshHpBar();
-        CanBeDamaged = true; // Cho phép nhận sát thương
         IsInstalled = true; // Đánh dấu là đã cài đặt
     }
 
     void Update() {
-        if(!IsInstalled || CurrentState == EnemyState.Die){
+        if(!IsRunning || !IsInstalled || CurrentState == EnemyState.Die){
             return;
         }
+        if(CurrentState == EnemyState.Attack){return;}
+
         target = FindTarget(); // Tìm kiếm mục tiêu
         if (target != null) {
-            if(CurrentState != EnemyState.Move){
-                animator.SetTrigger("Move");
-                CurrentState = EnemyState.Move;
+            if(myGun.CheckIfInRangeAttack(target.PosOfDetect)){
+                if(CurrentState != EnemyState.Attack){
+                    myAnimation.SetAnimByState(Enemy_StateAnimation.Attack);
+                    CurrentState = EnemyState.Attack;
+                }
+                agent.isStopped = true; 
+                myGun.Shoot();
+            }else{
+                if(CurrentState != EnemyState.Move){
+                    myAnimation.SetAnimByState(Enemy_StateAnimation.Move);
+                    CurrentState = EnemyState.Move;
+                }
+                agent.isStopped = false; 
+                agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
             }
-            agent.SetDestination(target.position); // Đặt vị trí đích là nhân vật
         }else{
             if(CurrentState != EnemyState.Idle){
-                animator.SetTrigger("Idle");
+                myAnimation.SetAnimByState(Enemy_StateAnimation.Idle);
                 CurrentState = EnemyState.Idle;
             }
+            agent.isStopped = true; // Dừng di chuyển
         }
+        model.transform.localPosition = Vector3.zero; // vì model tìm được đang lỗi animation nên buộc phải reset lại vị trí của model
     }
     void LateUpdate()
     {
+        if(!IsRunning || !IsInstalled)
+        {
+            return;
+        }
         hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
         hpBarCanvas.transform.LookAt(Camera.main.transform);
         hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
     }
 
-    public Transform FindTarget()
+    public MainCharController FindTarget()
     {
-        if(GamePlayManager.Instance == null || GamePlayManager.Instance.MainChar == null || GamePlayManager.Instance.MainChar.CurrentState == MainCharState.Die){
+        if(GamePlayManager.Instance == null || GamePlayManager.Instance.currentGameControl.mainChar == null || GamePlayManager.Instance.currentGameControl.mainChar.CurrentState == MainCharState.Die){
             return null;
         }
-
-        return GamePlayManager.Instance.MainChar.transform;
+        return GamePlayManager.Instance.currentGameControl.mainChar;
     }
     public void TakeDamage(int _damage)
     {
@@ -123,8 +161,11 @@ public class EnemyController : CharController
     IEnumerator DoProcess_Die()
     {
         CurrentState = EnemyState.Die;
-        animator.SetTrigger("Die");
+        myAnimation.SetAnimByState(Enemy_StateAnimation.Die);
         hpBarCanvasGroup.alpha = 0f;
+        agent.isStopped = true; // Dừng di chuyển khi chết
+
+        OnDie?.Invoke(this); // Gọi callback khi chết
 
         yield return new WaitForSeconds(1f); // Thời gian chờ trước khi tự hủy
 
@@ -134,12 +175,15 @@ public class EnemyController : CharController
         if (CurrentState == EnemyState.Die) {
             return; // Không xử lý va chạm nếu đã chết
         }
-        Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
+        // Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
         if(other.tag.Equals("Bullet")){
             BulletController _bullet = other.transform.parent.GetComponent<BulletController>();
             if(_bullet != null){
                 TakeDamage(_bullet.bulletValueDetail.damage);
-                _bullet.SelfDestruction();
+                if(!_bullet.bulletValueDetail.canPenetrated){
+                    // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
+                    _bullet.SelfDestruction();
+                }
             }
         }
     }

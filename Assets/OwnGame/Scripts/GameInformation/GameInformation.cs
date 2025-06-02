@@ -16,6 +16,5 @@ public class GameInformation : ScriptableObject
 	private static GameInformation ins;
 
 	public MainCharInfo mainCharInfo;
-	public List<EnemyInfo> listEnemyInfo;
 	public List<MapInfo> listMapInfo;
 }
