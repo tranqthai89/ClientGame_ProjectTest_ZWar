@@ -10,7 +10,7 @@ public class MainCharController : CharController
 
     [Header("Components")]
     [SerializeField] Rigidbody rb;
-    [SerializeField] Animator animator;
+    [SerializeField] MainCharAnimationController myAnimation;
     [SerializeField] Transform model;
     [SerializeField] Transform gunContainer;
     [SerializeField] SpriteRenderer radar;
@@ -116,17 +116,24 @@ public class MainCharController : CharController
         {
             return;
         }
+
         target = FindNearestEnemy();
+        float _x = Input.GetAxis("Horizontal");
+        if(_x == 0)
+        {
+            _x = GamePlayManagerInstance.UIManager.variableJoystick.Horizontal;
+        }
+        float _z = Input.GetAxis("Vertical");
+        if(_z == 0)
+        {
+            _z = GamePlayManagerInstance.UIManager.variableJoystick.Vertical;
+        }
 
-        // Lấy đầu vào từ bàn phím
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-
-        if (x == 0 && z == 0)
+        if (_x == 0 && _z == 0)
         {
             if (CurrentState != MainCharState.Idle)
             {
-                animator.SetTrigger("Idle");
+                myAnimation.SetAnimByState(MainChar_StateAnimation.Idle);
                 CurrentState = MainCharState.Idle;
             }
         }
@@ -134,12 +141,12 @@ public class MainCharController : CharController
         {
             if (CurrentState != MainCharState.Move)
             {
-                animator.SetTrigger("Move");
+                myAnimation.SetAnimByState(MainChar_StateAnimation.Move);
                 CurrentState = MainCharState.Move;
             }
         }
 
-        Vector3 _move = new Vector3(x, 0, z).normalized * speed;
+        Vector3 _move = new Vector3(_x, 0, _z).normalized * speed;
 
         // Sử dụng Rigidbody để di chuyển nhân vật
         rb.velocity = new Vector3(_move.x, rb.velocity.y, _move.z);

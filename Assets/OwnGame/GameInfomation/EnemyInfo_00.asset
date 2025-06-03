@@ -22,6 +22,6 @@ MonoBehaviour:
       damage: 5
     atkSpeed: 0
     bulletSpeed: 0
-    rangeShot: 1.5
+    rangeShot: 2
   power: 5
   prefab: {fileID: 8893365159058347356, guid: 86cd9dd34bbfd8c4886f859efba4040d, type: 3}

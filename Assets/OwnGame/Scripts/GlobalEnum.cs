@@ -25,6 +25,9 @@ namespace GlobalEnum{
     public enum Enemy_StateAnimation{
         Idle, Move, Die, Attack
     }
+    public enum MainChar_StateAnimation{
+        Idle, Move, Die
+    }
     public enum WaveState{
         None, CreateWave, Finished
     }

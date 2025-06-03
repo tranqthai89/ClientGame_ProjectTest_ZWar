@@ -5,8 +5,9 @@ using GlobalEnum;
 
 public class EnemyAnimationController : MonoBehaviour
 {
-    [SerializeField] EnemyController enemyController;
-    public int currentIdAnimation;
+    [SerializeField] Enemy_StateAnimation defaultStateAnimation = Enemy_StateAnimation.Idle;
+    EnemyController enemyController;
+    int currentIdAnimation;
     public Animator animator;
     public System.Action onCreateDmg;
 
@@ -20,7 +21,12 @@ public class EnemyAnimationController : MonoBehaviour
     }
     
     void Awake(){
+        enemyController = transform.parent.GetComponent<EnemyController>();
+        if(enemyController == null){
+            Debug.LogError("EnemyController not found on parent of " + gameObject.name);
+        }
         animator.keepAnimatorStateOnDisable = true;
+        currentIdAnimation = (int) defaultStateAnimation;
     }
 
     public void SetAnimByState(Enemy_StateAnimation _state){

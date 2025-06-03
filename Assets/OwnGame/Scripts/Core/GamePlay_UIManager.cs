@@ -14,6 +14,7 @@ using UnityEngine.UI;
     [SerializeField] CanvasGroup canvasGroup_PanelStartGame;
     [SerializeField] CanvasGroup canvasGroup_PanelFinishGame;
     [SerializeField] CanvasGroup canvasGroup_PanelFailure;
+    public VariableJoystick variableJoystick;
     [SerializeField] Text txtLevelMap;
     [SerializeField] Text txtIndexWaveInfo;
     [SerializeField] Text txtEnemiesInfo;

@@ -20,7 +20,7 @@ MonoBehaviour:
   gunMachineValueDetail:
     bulletValueDetail:
       canPenetrated: 0
-      damage: 1
+      damage: 5
     atkSpeed: 10
     bulletSpeed: 50
     rangeShot: 10

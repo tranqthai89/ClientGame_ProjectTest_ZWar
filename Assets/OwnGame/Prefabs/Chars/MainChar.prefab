@@ -54,7 +54,7 @@ MonoBehaviour:
   timeAutoSelfDestruction: 0
   posLocalDetect: {x: 0, y: 1.4, z: 0}
   rb: {fileID: 2127710677187940982}
-  animator: {fileID: 2653018224566581111}
+  myAnimation: {fileID: 992534150821679865}
   model: {fileID: 2653018224559085739}
   gunContainer: {fileID: 1457921369163625450}
   radar: {fileID: 5510739364006612468}
@@ -786,13 +786,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 620521677254244875, guid: a6c5ef03e221dbe4487c3dbcf1ee82db, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 992534150821679865}
   m_SourcePrefab: {fileID: 100100000, guid: a6c5ef03e221dbe4487c3dbcf1ee82db, type: 3}
 --- !u!4 &2653018224559085739 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 620521677254338155, guid: a6c5ef03e221dbe4487c3dbcf1ee82db, type: 3}
   m_PrefabInstance: {fileID: 3192457477674761920}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2653018224559178955 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 620521677254244875, guid: a6c5ef03e221dbe4487c3dbcf1ee82db, type: 3}
+  m_PrefabInstance: {fileID: 3192457477674761920}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &992534150821679865
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2653018224559178955}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ff79775d5fbc4a4e9ec071ad55ed416, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultStateAnimation: 0
+  animator: {fileID: 2653018224566581111}
 --- !u!95 &2653018224566581111 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 620521677263620535, guid: a6c5ef03e221dbe4487c3dbcf1ee82db, type: 3}
