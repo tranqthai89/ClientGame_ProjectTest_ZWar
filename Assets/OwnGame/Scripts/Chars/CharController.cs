@@ -38,4 +38,5 @@ public class CharController : MySimplePoolObjectController
         IsRunning = true;
         CanBeDamaged = true;
     }
+    public virtual void OnEventTriggerEnter2D(Collider _other) {}
 }

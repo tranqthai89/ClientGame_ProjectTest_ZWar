@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using GlobalEnum;
+using System;
 
 public class MainCharController : CharController
 {
@@ -22,6 +23,7 @@ public class MainCharController : CharController
 
     [Header("Guns")]
     [SerializeField] MachineGunController machineGun;
+    [SerializeField] MachineGunController gunCreateExplosion;
 
     [Header("Settings")]
     [SerializeField] LayerMask obstacleLayer;
@@ -40,25 +42,30 @@ public class MainCharController : CharController
     public MainCharState CurrentState{get;set;}
     public int CurrentDamage{
         get{
-            if(currentGun != null)
+            if(CurrentGun != null)
             {
-                return currentGun.GunValueDetail.bulletValueDetail.damage;
+                return CurrentGun.GunValueDetail.bulletValueDetail.damage;
             }
             return 0; // Trả về 0 nếu không có súng hiện tại
         }
     }
     public float CurrentAtkSpeed{
         get{
-            if(currentGun != null)
+            if(CurrentGun != null)
             {
-                return currentGun.GunValueDetail.atkSpeed;
+                return CurrentGun.GunValueDetail.atkSpeed;
             }
             return 0f; // Trả về 0 nếu không có súng hiện tại
         }
     }
     EnemyController target;
     public MainCharInfo MyCharInfo{get;set;} // Thông tin về nhân vật chính
-    GunController currentGun;
+    public GunController CurrentGun{get;set;}
+    public int IndexGunSelected{get;set;} // Chỉ số súng hiện tại được chọn
+    public DateTime timeToSwitchGun; // Thời gian để chuyển đổi súng
+
+    int indexSfxStep = 0; // Biến để đếm số lần phát âm thanh bước chân
+    int countSteps = 0; // Biến đếm số bước đi
 
     IEnumerator process_Die;
 
@@ -76,12 +83,18 @@ public class MainCharController : CharController
         isGrounded = false;
         hpBarCanvasGroup.alpha = 0f; // Đặt độ mờ của thanh máu về 100%
 
+        myAnimation.SetAnimByState(MainChar_StateAnimation.Idle);
+        myAnimation.animator.SetFloat("Blend_Speed", 0f);
+
         if (radar != null)
         {
             radar.color = radarColor_Normal;
             radar.transform.localScale = Vector3.one; // Đặt kích thước ban đầu
         }
         model.rotation = Quaternion.identity; // Đặt hướng ban đầu của mô hình
+
+        countSteps = 0; // Đặt lại số bước đi
+        timeToSwitchGun = DateTime.UtcNow; // Đặt thời gian chuyển đổi súng ban đầu
     }
 
     public void Init(MainCharInfo _mainCharInfo)
@@ -100,16 +113,20 @@ public class MainCharController : CharController
         detectionRadius = MyCharInfo.detectionRadius;
 
         machineGun.Init(MyCharInfo.gunMachineValueDetail);
-        currentGun = machineGun;
+        gunCreateExplosion.Init(MyCharInfo.gunCreateExplosionValueDetail);
+        SwitchMachinGun(); // Mặc định chọn súng máy
         
         radar.transform.localScale = new Vector3(detectionRadius * 2, detectionRadius * 2, 1f);
         radar.color = radarColor_Normal;
+
+        countSteps = 0; // Đặt lại số bước đi
 
         RefreshHpBar();
 
         IsInstalled = true;
     }
-
+    
+    #region Behaviors
     void Update()
     {
         if(!IsRunning || !IsInstalled || CurrentState == MainCharState.Die)
@@ -118,31 +135,51 @@ public class MainCharController : CharController
         }
 
         target = FindNearestEnemy();
-        float _x = Input.GetAxis("Horizontal");
-        if(_x == 0)
+        float _x = 0f;
+        float _z = 0f;
+        #if UNITY_EDITOR
+            _x = Input.GetAxis("Horizontal");
+            _z = Input.GetAxis("Vertical");
+        #endif
+
+        if(_x == 0f)
         {
             _x = GamePlayManagerInstance.UIManager.variableJoystick.Horizontal;
         }
-        float _z = Input.GetAxis("Vertical");
-        if(_z == 0)
+        if(_z == 0f)
         {
             _z = GamePlayManagerInstance.UIManager.variableJoystick.Vertical;
         }
-
+        // Vì chỉ có 2 animation là Idle và Move nên set Blend_Speed là 0 hoặc 1
         if (_x == 0 && _z == 0)
         {
             if (CurrentState != MainCharState.Idle)
             {
                 myAnimation.SetAnimByState(MainChar_StateAnimation.Idle);
+                myAnimation.animator.SetFloat("Blend_Speed", 0f); // Đặt tốc độ về 0 khi không di chuyển
                 CurrentState = MainCharState.Idle;
             }
+            countSteps = 0; // Đặt lại số bước đi khi đứng yên
+            indexSfxStep = 0; // Đặt lại chỉ số âm thanh bước chân
         }
         else
         {
             if (CurrentState != MainCharState.Move)
             {
                 myAnimation.SetAnimByState(MainChar_StateAnimation.Move);
+                myAnimation.animator.SetFloat("Blend_Speed", 1f);
                 CurrentState = MainCharState.Move;
+            }
+            countSteps++;
+            if(countSteps % 60 == 0) 
+            {
+                MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxListMainCharStep[indexSfxStep]);
+                indexSfxStep++;
+                if(indexSfxStep >= GameInformation.Instance.sfxListMainCharStep.Count)
+                {
+                    indexSfxStep = 0; // Reset lại chỉ số âm thanh bước chân nếu đã đến cuối danh sách
+                }
+                countSteps = 0; // Đặt lại số bước đi
             }
         }
 
@@ -155,7 +192,7 @@ public class MainCharController : CharController
         if(target != null)
         {
             FaceTarget();
-            currentGun.Shoot();
+            CurrentGun.Shoot();
             radar.color = radarColor_Detecting;
         }
         else
@@ -172,10 +209,12 @@ public class MainCharController : CharController
             }
             radar.color = radarColor_Normal;
 
-            if (Input.GetMouseButtonDown(0)) // Kiểm tra nếu chuột trái được nhấn
-            {
-                currentGun.Shoot();
-            }
+            #if UNITY_EDITOR
+                if (Input.GetMouseButtonDown(0)) // Kiểm tra nếu chuột trái được nhấn
+                {
+                    CurrentGun.Shoot();
+                }
+            #endif
         }
 
         // Xử lý nhảy
@@ -196,7 +235,59 @@ public class MainCharController : CharController
         hpBarCanvas.transform.LookAt(Camera.main.transform);
         hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
     }
-    private bool IsGrounded()
+    protected void TakeDamage(int _damage)
+    {
+        if(!CanBeDamaged)
+        {
+            return; // Nếu không thể nhận sát thương, không làm gì cả
+        }
+        MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxMainCharHit);
+        CurrentHp -= _damage;
+        hpBarCanvasGroup.alpha = 1f; // Hiển thị thanh máu khi bị tấn công
+        RefreshHpBar();
+        if(CurrentHp <= 0)
+        {
+            SetUpDie(); // Gọi hàm Die nếu máu <= 0
+        }
+    }
+    protected void SetUpDie()
+    {
+        if (CurrentState == MainCharState.Die)
+        {
+            return; // Nếu đã chết, không làm gì cả
+        }
+        process_Die = DoProcess_Die();
+        StartCoroutine(process_Die);
+    }
+    IEnumerator DoProcess_Die()
+    {
+        CurrentState = MainCharState.Die;
+        hpBarCanvasGroup.alpha = 0f;
+        myAnimation.animator.SetFloat("Blend_Speed", 0f); 
+        MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxMainCharDie);
+
+        OnDie?.Invoke(this); // Gọi callback khi chết
+
+        //TODO: Diễn animation chết ...
+
+        yield break;
+    }
+    #endregion
+
+    #region  Others
+    public void SwitchMachinGun(){
+        if(!timeToSwitchGun.CheckIfItsTime()){return;}
+        CurrentGun = machineGun;
+        IndexGunSelected = 0; // Đặt chỉ số súng hiện tại là 0 (súng máy)
+        timeToSwitchGun = DateTime.UtcNow.AddSeconds(1); // Cập nhật thời gian chuyển đổi súng
+    }
+    public void SwitchMissile(){
+        if(!timeToSwitchGun.CheckIfItsTime()){return;}
+        CurrentGun = gunCreateExplosion;
+        IndexGunSelected = 1; // Đặt chỉ số súng hiện tại là 1 (súng gây nổ)
+        timeToSwitchGun = DateTime.UtcNow.AddSeconds(1); // Cập nhật thời gian chuyển đổi súng
+    }
+    protected bool IsGrounded()
     {
         // Kiểm tra bằng Raycast trước (nhanh hơn và ít tốn tài nguyên)
         // if (Physics.Raycast(transform.position, Vector3.down, 1.1f, groundLayer))
@@ -222,7 +313,7 @@ public class MainCharController : CharController
         // }
         // return false;
     }
-    private void FaceTarget()
+    protected void FaceTarget()
     {
         if (target != null)
         {
@@ -238,7 +329,7 @@ public class MainCharController : CharController
             }
         }
     }
-    private EnemyController FindNearestEnemy()
+    protected EnemyController FindNearestEnemy()
     {
         Collider[] _colliders = Physics.OverlapSphere(transform.position, detectionRadius, enemyLayer);
         EnemyController _nearestEnemy = null;
@@ -273,55 +364,29 @@ public class MainCharController : CharController
 
         return _nearestEnemy;
     }
-    public void TakeDamage(int _damage)
-    {
-        if(!CanBeDamaged)
-        {
-            return; // Nếu không thể nhận sát thương, không làm gì cả
-        }
-        CurrentHp -= _damage;
-        hpBarCanvasGroup.alpha = 1f; // Hiển thị thanh máu khi bị tấn công
-        RefreshHpBar();
-        if(CurrentHp <= 0)
-        {
-            SetUpDie(); // Gọi hàm Die nếu máu <= 0
-        }
-    }
-    public void RefreshHpBar()
+    protected void RefreshHpBar()
     {
         if (MyCharInfo.maxHp > 0)
         {
             hpBar_ImgFill.fillAmount = (float) CurrentHp / MyCharInfo.maxHp;
         }
     }
-    public void SetUpDie()
-    {
-        if (CurrentState == MainCharState.Die)
-        {
-            return; // Nếu đã chết, không làm gì cả
-        }
-        process_Die = DoProcess_Die();
-        StartCoroutine(process_Die);
-    }
-    IEnumerator DoProcess_Die()
-    {
-        CurrentState = MainCharState.Die;
-        hpBarCanvasGroup.alpha = 0f;
-        OnDie?.Invoke(this); // Gọi callback khi chết
+    #endregion
 
-        //TODO: Diễn animation chết ...
-
-        yield break;
+    #region Event Trigger
+    void OnTriggerEnter(Collider _other) {
+        OnEventTriggerEnter2D(_other);
     }
-    
-    void OnTriggerEnter(Collider other) {
+    public override void OnEventTriggerEnter2D(Collider _other) {
         if (CurrentState == MainCharState.Die) {
             return; // Không xử lý va chạm nếu đã chết
         }
         // Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
-        if(other.tag.Equals("Bullet")){
-            BulletController _bullet = other.transform.parent.GetComponent<BulletController>();
+        if(_other.tag.Equals("Bullet")){
+            BulletController _bullet = _other.transform.parent.GetComponent<BulletController>();
             if(_bullet != null){
+                _bullet.CreateEffectHit();
+
                 TakeDamage(_bullet.bulletValueDetail.damage);
                 if(!_bullet.bulletValueDetail.canPenetrated){
                     // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
@@ -333,4 +398,5 @@ public class MainCharController : CharController
     // void OnCollisionEnter(Collision collision) {
     //     Debug.Log("OnCollisionEnter | Va chạm với: " + collision.gameObject.name);
     // }
+    #endregion
 }

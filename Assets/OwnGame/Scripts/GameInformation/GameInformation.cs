@@ -17,4 +17,13 @@ public class GameInformation : ScriptableObject
 
 	public MainCharInfo mainCharInfo;
 	public List<MapInfo> listMapInfo;
+
+	[Header("Audio Info")]
+	public AudioClip bgm;
+	public List<AudioClip> sfxListMainCharStep;
+	public AudioClip sfxMainCharHit;
+	public AudioClip sfxMainCharDie;
+	public AudioClip sfxEnemyDie;
+	public List<AudioClip> sfxListMachineGunShoot;
+	public AudioClip sfxExplosion;
 }

@@ -13,7 +13,28 @@ MonoBehaviour:
   m_Name: GameInformation
   m_EditorClassIdentifier: 
   mainCharInfo: {fileID: 11400000, guid: d4098592708af4b418e0fb7f847f29b9, type: 2}
-  listEnemyInfo:
-  - {fileID: 11400000, guid: 80e5d54e736e11140810c24f4a8612f6, type: 2}
   listMapInfo:
   - {fileID: 11400000, guid: 1de05ba42f542634b8e1bb7c8a6c482f, type: 2}
+  bgm: {fileID: 8300000, guid: 7b9fcc6d36877ed4abc37999666a2c10, type: 3}
+  sfxListMainCharStep:
+  - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}
+  - {fileID: 8300000, guid: 85016e0f2b01da248b9663dd49a161b0, type: 3}
+  - {fileID: 8300000, guid: 186de84b3207156479abe98f4958fed0, type: 3}
+  - {fileID: 8300000, guid: 1a91fcd19acf1e54bba0945d9f390849, type: 3}
+  - {fileID: 8300000, guid: 14e8a8d2158bec840b56c54f5266e692, type: 3}
+  - {fileID: 8300000, guid: 29841e7d5bbfb5b419c9ad16ca8bc4c1, type: 3}
+  - {fileID: 8300000, guid: dd1af302b8902684d9381de1f2d3a5af, type: 3}
+  - {fileID: 8300000, guid: 67c8b33e424ccdc4486edf538ab91c5a, type: 3}
+  - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
+  - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
+  sfxMainCharHit: {fileID: 8300000, guid: 6df1659f4d687fa47b8833550edce1aa, type: 3}
+  sfxMainCharDie: {fileID: 8300000, guid: 573d82200309e6d4aaaf71a413a14048, type: 3}
+  sfxEnemyDie: {fileID: 8300000, guid: 79015adfaa315cf41b0f64584a251e52, type: 3}
+  sfxListMachineGunShoot:
+  - {fileID: 8300000, guid: c979f7692cec29647aac07e3664d4931, type: 3}
+  - {fileID: 8300000, guid: 5b01f6c5f21a2df44bbfdd06dd37c054, type: 3}
+  - {fileID: 8300000, guid: b79e699f11b05eb48aab1f92dee872b4, type: 3}
+  - {fileID: 8300000, guid: 91d43c2b5fa1b3346a2212ba70291f35, type: 3}
+  - {fileID: 8300000, guid: 6fb3bda2f2ce1ed4694e47ae1aada8a5, type: 3}
+  - {fileID: 8300000, guid: 2ed8322d317fecc419872319c81b9c73, type: 3}
+  sfxExplosion: {fileID: 8300000, guid: a2181e988861f9c41b092d7123eb228a, type: 3}

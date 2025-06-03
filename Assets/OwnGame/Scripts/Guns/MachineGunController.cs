@@ -4,6 +4,7 @@ using DevToolkit;
 using Unity.Mathematics;
 using UnityEngine;
 using GlobalEnum;
+using GlobalClass;
 
 public class MachineGunController : GunController
 {
@@ -16,6 +17,14 @@ public class MachineGunController : GunController
     // [SerializeField] private MySimplePoolObjectController bulletTrailPrefab;
     // [SerializeField] private MySimplePoolObjectController effectHitPrefab;
     [SerializeField] private BulletController bulletPrefab;
+
+    int indexSfxShoot = 0;
+
+    public override void Init(GunValueDetail _gunValueDetail)
+    {
+        base.Init(_gunValueDetail);
+        indexSfxShoot = 0;
+    }
 
     public override void Shoot()
     {
@@ -45,6 +54,13 @@ public class MachineGunController : GunController
     }
 
     private void SpawnBullet(){
+        MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxListMachineGunShoot[indexSfxShoot]);
+        indexSfxShoot++;
+        if(indexSfxShoot >= GameInformation.Instance.sfxListMachineGunShoot.Count)
+        {
+            indexSfxShoot = 0;
+        }
+
         BulletController _bullet = GamePlayManager.Instance.CreateBullet(bulletPrefab, bulletSpawnPoint.position, myCompass.rotation);
         _bullet.Init(GunValueDetail.bulletValueDetail, bulletSpeed, GunValueDetail.rangeShot);
         _bullet.Move();

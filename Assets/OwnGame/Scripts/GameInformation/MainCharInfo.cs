@@ -13,6 +13,7 @@ public class MainCharInfo : CharInfo
     public float detectionRadius;
 
     public GunValueDetail gunMachineValueDetail;
+    public GunValueDetail gunCreateExplosionValueDetail;
 
     [Header("Prefab")]
     public MainCharController prefab;

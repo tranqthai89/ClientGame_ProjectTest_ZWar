@@ -20,6 +20,10 @@ using UnityEngine.UI;
     [SerializeField] Text txtEnemiesInfo;
     [SerializeField] Text txtMainCharInfo_Damage;
     [SerializeField] Text txtMainCharInfo_AtkSpeed;
+    [SerializeField] CanvasGroup canvasGroup_BtnToggleMusic;
+    [SerializeField] CanvasGroup canvasGroup_BtnToggleSfx;
+    [SerializeField] CanvasGroup canvasGroup_BtnSwitchMachineGun;
+    [SerializeField] CanvasGroup canvasGroup_BtnSwitchMissile;
 
     IEnumerator process_ShowPanelStartGame;
     
@@ -29,6 +33,7 @@ using UnityEngine.UI;
         RefreshUI_IndexWaveInfo();
         RefreshUI_EnemyInfo();
         RefreshUI_MainCharInfo();
+        RefreshUI_GroupBtnSwitchGun();
     }
     public void RefreshUI_LevelMapInfo()
     {
@@ -98,5 +103,45 @@ using UnityEngine.UI;
     {
         canvasGroup_PanelFailure.alpha = 0f;
         canvasGroup_PanelFailure.blocksRaycasts = false;
+    }
+    public void RefreshUI_BtnToggleMusic()
+    {
+        if(DataManager.Instance.musicStatus == 0)
+        {
+            canvasGroup_BtnToggleMusic.alpha = 0.3f;
+        }
+        else
+        {
+            canvasGroup_BtnToggleMusic.alpha = 1f;
+        }
+    }
+    public void RefreshUI_BtnToggleSfx()
+    {
+        if(DataManager.Instance.sfxStatus == 0)
+        {
+            canvasGroup_BtnToggleSfx.alpha = 0.3f;
+        }
+        else
+        {
+            canvasGroup_BtnToggleSfx.alpha = 1f;
+        }
+    }
+    public void RefreshUI_GroupBtnSwitchGun(){
+        if(GamePlayManagerInstance.currentGameControl.mainChar == null || GamePlayManagerInstance.currentGameControl.mainChar.CurrentGun == null){
+            return; 
+        }
+        if(GamePlayManagerInstance.currentGameControl.mainChar.IndexGunSelected == 0){ // Machine Gun
+            canvasGroup_BtnSwitchMachineGun.alpha = 1f;
+            canvasGroup_BtnSwitchMachineGun.blocksRaycasts = false;
+
+            canvasGroup_BtnSwitchMissile.alpha = 0.3f;
+            canvasGroup_BtnSwitchMissile.blocksRaycasts = true;
+        }else{
+            canvasGroup_BtnSwitchMachineGun.alpha = 0.3f;
+            canvasGroup_BtnSwitchMachineGun.blocksRaycasts = true;
+
+            canvasGroup_BtnSwitchMissile.alpha = 1f;
+            canvasGroup_BtnSwitchMissile.blocksRaycasts = false;
+        }
     }
 }

@@ -8,6 +8,10 @@ namespace GlobalEnum{
         MachineGun,
         GunBaseOnAnimation
     }
+    public enum BulletType{
+        Normal,
+        CanCreateExplosion
+	}
     public enum CharType{
         Unknown = 0,
         MainChar,

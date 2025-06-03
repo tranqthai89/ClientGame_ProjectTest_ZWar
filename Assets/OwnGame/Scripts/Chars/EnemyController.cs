@@ -78,6 +78,7 @@ public class EnemyController : CharController
         IsInstalled = true; // Đánh dấu là đã cài đặt
     }
 
+    #region Behaviors
     void Update() {
         if(!IsRunning || !IsInstalled || CurrentState == EnemyState.Die){
             return;
@@ -120,15 +121,7 @@ public class EnemyController : CharController
         hpBarCanvas.transform.LookAt(Camera.main.transform);
         hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
     }
-
-    public MainCharController FindTarget()
-    {
-        if(GamePlayManager.Instance == null || GamePlayManager.Instance.currentGameControl.mainChar == null || GamePlayManager.Instance.currentGameControl.mainChar.CurrentState == MainCharState.Die){
-            return null;
-        }
-        return GamePlayManager.Instance.currentGameControl.mainChar;
-    }
-    public void TakeDamage(int _damage)
+    protected void TakeDamage(int _damage)
     {
         if(!CanBeDamaged)
         {
@@ -142,14 +135,7 @@ public class EnemyController : CharController
             SetUpDie(); // Gọi hàm Die nếu máu <= 0
         }
     }
-    public void RefreshHpBar()
-    {
-        if (MyCharInfo.maxHp > 0)
-        {
-            hpBar_ImgFill.fillAmount = (float) CurrentHp / MyCharInfo.maxHp;
-        }
-    }
-    public void SetUpDie()
+    protected void SetUpDie()
     {
         if (CurrentState == EnemyState.Die)
         {
@@ -164,6 +150,7 @@ public class EnemyController : CharController
         myAnimation.SetAnimByState(Enemy_StateAnimation.Die);
         hpBarCanvasGroup.alpha = 0f;
         agent.isStopped = true; // Dừng di chuyển khi chết
+        MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxEnemyDie);
 
         OnDie?.Invoke(this); // Gọi callback khi chết
 
@@ -171,14 +158,48 @@ public class EnemyController : CharController
 
         SelfDestruction();
     }
-    void OnTriggerEnter(Collider other) {
+    #endregion
+
+    #region Others
+    protected void RefreshHpBar()
+    {
+        if (MyCharInfo.maxHp > 0)
+        {
+            hpBar_ImgFill.fillAmount = (float) CurrentHp / MyCharInfo.maxHp;
+        }
+    }
+    protected MainCharController FindTarget()
+    {
+        if(GamePlayManager.Instance == null || GamePlayManager.Instance.currentGameControl.mainChar == null || GamePlayManager.Instance.currentGameControl.mainChar.CurrentState == MainCharState.Die){
+            return null;
+        }
+        return GamePlayManager.Instance.currentGameControl.mainChar;
+    }
+    #endregion
+
+    #region Event Trigger
+    void OnTriggerEnter(Collider _other) {
+        OnEventTriggerEnter2D(_other);
+    }
+    public override void OnEventTriggerEnter2D(Collider _other) {
         if (CurrentState == EnemyState.Die) {
             return; // Không xử lý va chạm nếu đã chết
         }
         // Debug.Log("OnTriggerEnter | Va chạm với: " + other.tag);
-        if(other.tag.Equals("Bullet")){
-            BulletController _bullet = other.transform.parent.GetComponent<BulletController>();
+        if(_other.tag.Equals("Bullet")){
+            BulletController _bullet = _other.transform.parent.GetComponent<BulletController>();
             if(_bullet != null){
+                _bullet.CreateEffectHit();
+
+                if(_bullet.BulletType == BulletType.CanCreateExplosion){
+                    ((BulletCanCreateExplosionController) _bullet).CreateExplosion();
+                    _bullet.SelfDestruction();
+                    return;
+                }
+                if(_bullet.bulletValueDetail == null){
+                    Debug.LogError("BulletController: bulletValueDetail is null!");
+                    return;
+                }
                 TakeDamage(_bullet.bulletValueDetail.damage);
                 if(!_bullet.bulletValueDetail.canPenetrated){
                     // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
@@ -190,4 +211,5 @@ public class EnemyController : CharController
     // void OnCollisionEnter(Collision collision) {
     //     Debug.Log("OnCollisionEnter | Va chạm với: " + collision.gameObject.name);
     // }
+    #endregion
 }

@@ -4,6 +4,7 @@ using UnityEngine;
 using DevToolkit;
 using Lean.Pool;
 using Cinemachine;
+using GlobalEnum;
 
 public class GamePlayManager : MonoBehaviour
 {
@@ -44,6 +45,9 @@ public class GamePlayManager : MonoBehaviour
 
     public void Init()
     {
+        UIManager.RefreshUI_BtnToggleMusic();
+        UIManager.RefreshUI_BtnToggleSfx();
+        MyAudioManager.Instance.PlayMusic(GameInformation.Instance.bgm);
         currentGameControl = new GameControl();
     }
 
@@ -98,6 +102,55 @@ public class GamePlayManager : MonoBehaviour
         enemyPoolManager.AddObject(_tmpEnemy);
 
         return _tmpEnemy;
+    }
+    #endregion
+
+    #region  On button click
+    public void OnBtnToggleMusic()
+    {
+        if (DataManager.Instance.musicStatus == 0)
+        {
+            DataManager.Instance.musicStatus = 1;
+            MyAudioManager.Instance.ResumeMusic();
+        }
+        else
+        {
+            DataManager.Instance.musicStatus = 0;
+            MyAudioManager.Instance.StopMusic();
+        }
+        UIManager.RefreshUI_BtnToggleMusic();
+    }
+    public void OnBtnToggleSfx()
+    {
+        if (DataManager.Instance.sfxStatus == 0)
+        {
+            DataManager.Instance.sfxStatus = 1;
+        }
+        else
+        {
+            DataManager.Instance.sfxStatus = 0;
+        }
+        UIManager.RefreshUI_BtnToggleSfx();
+    }
+    public void OnBtnSwitchMachineGun()
+    {
+        if(currentGameControl.currentState != GamePlayState.PlayGame 
+            || currentGameControl.mainChar == null || currentGameControl.mainChar.CurrentState == MainCharState.Die
+            || !currentGameControl.mainChar.timeToSwitchGun.CheckIfItsTime()){
+            return; 
+        }
+        currentGameControl.mainChar.SwitchMachinGun();
+        UIManager.RefreshUI_GroupBtnSwitchGun();
+    }
+    public void OnBtnSwitchMissile()
+    {
+        if(currentGameControl.currentState != GamePlayState.PlayGame 
+            || currentGameControl.mainChar == null || currentGameControl.mainChar.CurrentState == MainCharState.Die
+            || !currentGameControl.mainChar.timeToSwitchGun.CheckIfItsTime()){
+            return; 
+        }
+        currentGameControl.mainChar.SwitchMissile();
+        UIManager.RefreshUI_GroupBtnSwitchGun();
     }
     #endregion
 }
