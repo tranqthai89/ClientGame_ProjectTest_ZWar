@@ -30,7 +30,7 @@ namespace GlobalEnum{
         Idle, Move, Die, Attack
     }
     public enum MainChar_StateAnimation{
-        Idle, Move, Die
+        IdleAndMove, Die
     }
     public enum WaveState{
         None, CreateWave, Finished

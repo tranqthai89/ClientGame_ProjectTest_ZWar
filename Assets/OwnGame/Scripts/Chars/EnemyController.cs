@@ -27,6 +27,12 @@ public class EnemyController : CharController
 
     IEnumerator process_Die;
 
+    bool IsHideModel{
+        get{
+            return !model.gameObject.activeSelf;
+        }
+    }
+
     public override void StopAllActionNow()
     {
         base.StopAllActionNow();
@@ -41,7 +47,8 @@ public class EnemyController : CharController
         MyCharInfo = null;
         CurrentState = EnemyState.Idle;
         hpBarCanvasGroup.alpha = 0f; // Đặt độ mờ của thanh máu về 100%
-
+        
+        model.gameObject.SetActive(true);
         model.transform.localRotation = Quaternion.identity;
         model.transform.localPosition = Vector3.zero;
     }
@@ -85,31 +92,60 @@ public class EnemyController : CharController
         }
         if(CurrentState == EnemyState.Attack){return;}
 
+        HideModelIfOutOfCamera();
+
         target = FindTarget(); // Tìm kiếm mục tiêu
-        if (target != null) {
-            if(myGun.CheckIfInRangeAttack(target.PosOfDetect)){
-                if(CurrentState != EnemyState.Attack){
-                    myAnimation.SetAnimByState(Enemy_StateAnimation.Attack);
-                    CurrentState = EnemyState.Attack;
-                }
-                agent.isStopped = true; 
-                myGun.Shoot();
-            }else{
-                if(CurrentState != EnemyState.Move){
-                    myAnimation.SetAnimByState(Enemy_StateAnimation.Move);
-                    CurrentState = EnemyState.Move;
-                }
+        if(IsHideModel){
+            if (target != null) {
                 agent.isStopped = false; 
                 agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
             }
+            else{
+                agent.isStopped = true; // Dừng di chuyển
+            }
         }else{
+            if (target != null) {
+                if(myGun.CheckIfInRangeAttack(target.PosOfDetect)){
+                    if(CurrentState != EnemyState.Attack){
+                        myAnimation.SetAnimByState(Enemy_StateAnimation.Attack);
+                        CurrentState = EnemyState.Attack;
+                    }
+                    agent.isStopped = true; 
+                    myGun.Shoot();
+                }else{
+                    if(CurrentState != EnemyState.Move){
+                        myAnimation.SetAnimByState(Enemy_StateAnimation.Move);
+                        CurrentState = EnemyState.Move;
+                    }
+                    agent.isStopped = false; 
+                    agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
+                }
+            }else{
+                if(CurrentState != EnemyState.Idle){
+                    myAnimation.SetAnimByState(Enemy_StateAnimation.Idle);
+                    CurrentState = EnemyState.Idle;
+                }
+                agent.isStopped = true; // Dừng di chuyển
+            }
+            model.transform.localPosition = Vector3.zero; // vì model tìm được đang lỗi animation nên buộc phải reset lại vị trí của model
+        }
+    }
+    void HideModelIfOutOfCamera(){
+        // - Optimize:
+        // - Ẩn model đi khi nằm ngoài phạm vi camera và set animation Idle
+        Vector3 _viewportPos = Camera.main.WorldToViewportPoint(transform.position);
+        if (_viewportPos.x < 0 || _viewportPos.x > 1 || _viewportPos.y < 0 || _viewportPos.y > 1)
+        {
+            model.gameObject.SetActive(false); // Tắt nếu ra khỏi màn hình
             if(CurrentState != EnemyState.Idle){
                 myAnimation.SetAnimByState(Enemy_StateAnimation.Idle);
                 CurrentState = EnemyState.Idle;
             }
-            agent.isStopped = true; // Dừng di chuyển
         }
-        model.transform.localPosition = Vector3.zero; // vì model tìm được đang lỗi animation nên buộc phải reset lại vị trí của model
+        else
+        {
+            model.gameObject.SetActive(true); // Bật lại nếu vào màn hình
+        }
     }
     void LateUpdate()
     {

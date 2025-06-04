@@ -5,7 +5,7 @@ using GlobalEnum;
 
 public class MainCharAnimationController : MonoBehaviour
 {
-    [SerializeField] MainChar_StateAnimation defaultStateAnimation = MainChar_StateAnimation.Idle;
+    [SerializeField] MainChar_StateAnimation defaultStateAnimation = MainChar_StateAnimation.IdleAndMove;
     MainCharController mainCharController;
     int currentIdAnimation;
     public Animator animator;

@@ -83,7 +83,7 @@ public class MainCharController : CharController
         isGrounded = false;
         hpBarCanvasGroup.alpha = 0f; // Đặt độ mờ của thanh máu về 100%
 
-        myAnimation.SetAnimByState(MainChar_StateAnimation.Idle);
+        myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
         myAnimation.animator.SetFloat("Blend_Speed", 0f);
 
         if (radar != null)
@@ -129,7 +129,7 @@ public class MainCharController : CharController
     #region Behaviors
     void Update()
     {
-        if(!IsRunning || !IsInstalled || CurrentState == MainCharState.Die)
+        if(!IsRunning || !IsInstalled || CurrentState == MainCharState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame)
         {
             return;
         }
@@ -155,7 +155,7 @@ public class MainCharController : CharController
         {
             if (CurrentState != MainCharState.Idle)
             {
-                myAnimation.SetAnimByState(MainChar_StateAnimation.Idle);
+                myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
                 myAnimation.animator.SetFloat("Blend_Speed", 0f); // Đặt tốc độ về 0 khi không di chuyển
                 CurrentState = MainCharState.Idle;
             }
@@ -166,7 +166,7 @@ public class MainCharController : CharController
         {
             if (CurrentState != MainCharState.Move)
             {
-                myAnimation.SetAnimByState(MainChar_StateAnimation.Move);
+                myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
                 myAnimation.animator.SetFloat("Blend_Speed", 1f);
                 CurrentState = MainCharState.Move;
             }
