@@ -80,7 +80,7 @@ public class EnemyController : CharController
 
     #region Behaviors
     void Update() {
-        if(!IsRunning || !IsInstalled || CurrentState == EnemyState.Die){
+        if(!IsRunning || !IsInstalled || CurrentState == EnemyState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame){
             return;
         }
         if(CurrentState == EnemyState.Attack){return;}
@@ -191,19 +191,22 @@ public class EnemyController : CharController
             if(_bullet != null){
                 _bullet.CreateEffectHit();
 
-                if(_bullet.BulletType == BulletType.CanCreateExplosion){
-                    ((BulletCanCreateExplosionController) _bullet).CreateExplosion();
-                    _bullet.SelfDestruction();
-                    return;
-                }
                 if(_bullet.bulletValueDetail == null){
                     Debug.LogError("BulletController: bulletValueDetail is null!");
-                    return;
-                }
-                TakeDamage(_bullet.bulletValueDetail.damage);
-                if(!_bullet.bulletValueDetail.canPenetrated){
-                    // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
                     _bullet.SelfDestruction();
+                    return;
+                }else{
+                    if(_bullet.bulletValueDetail.canExplosion){
+                        _bullet.CreateExplosion();
+                        _bullet.SelfDestruction();
+                        return;
+                    }
+
+                    TakeDamage(_bullet.bulletValueDetail.damage);
+                    if(!_bullet.bulletValueDetail.canPenetrated){
+                        // Nếu viên đạn không thể xuyên qua, tự hủy viên đạn
+                        _bullet.SelfDestruction();
+                    }
                 }
             }
         }

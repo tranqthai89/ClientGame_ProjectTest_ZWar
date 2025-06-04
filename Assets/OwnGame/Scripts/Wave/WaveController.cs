@@ -80,7 +80,7 @@ public class WaveController
                 Debug.Log("[1] No enemy in miniwave " + i + " | indexWave: " + indexWave);
                 break;
             }
-            List<Transform> _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+            List<Transform> _listSpawnPoints = GamePlayManagerInstance.currentGameControl.currentMap.listEnemySpawnPoints.ShallowCopy();
             if(_listSpawnPoints.Count == 0){
                 Debug.LogError("No spawn points available.");
                 break;
@@ -111,14 +111,14 @@ public class WaveController
                 _tmpCount ++;
 
                 if(_listSpawnPoints.Count == 0){
-                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                    _listSpawnPoints = GamePlayManagerInstance.currentGameControl.currentMap.listEnemySpawnPoints.ShallowCopy();
                     yield return new WaitForSeconds(1f); // Chờ một khoảng thời gian trước khi spawn tiếp
                 }else if(_tmpCount >= _maxSpawnPointCount){ // Giới hạn tối đa 10 con quái mỗi lần spawn
-                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                    _listSpawnPoints = GamePlayManagerInstance.currentGameControl.currentMap.listEnemySpawnPoints.ShallowCopy();
                     _tmpCount = 0;
                     yield return new WaitForSeconds(1f); // Chờ một khoảng thời gian trước khi spawn tiếp
                 }else if(GamePlayManagerInstance.enemyPoolManager.listObjects.Count >= 50){
-                    _listSpawnPoints = WaveManagerInstance.listSpawnPoints.ShallowCopy();
+                    _listSpawnPoints = GamePlayManagerInstance.currentGameControl.currentMap.listEnemySpawnPoints.ShallowCopy();
                 }
             }
             yield return new WaitUntil(()=>GamePlayManagerInstance.enemyPoolManager.listObjects.Count == 0);

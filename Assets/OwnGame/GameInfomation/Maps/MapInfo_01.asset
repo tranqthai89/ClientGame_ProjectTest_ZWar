@@ -10,18 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c20c434f6213384e903a3d1b1ebe2c2, type: 3}
-  m_Name: MapInfo_00
+  m_Name: MapInfo_01
   m_EditorClassIdentifier: 
-  level: 1
-  totalWaves: 3
+  level: 2
+  totalWaves: 5
   listEnemyRandom:
   - enemyInfo: {fileID: 11400000, guid: 80e5d54e736e11140810c24f4a8612f6, type: 2}
+    weight: 10
+    limitAppearInWave: -1
+  - enemyInfo: {fileID: 11400000, guid: 969a89d8111644b4bba45c1882c8f874, type: 2}
     weight: 5
     limitAppearInWave: -1
-  wavePowBase: 100
-  wavePowFactor: 10
+  wavePowBase: 150
+  wavePowFactor: 12
   wavePowLambda: 2.4
-  miniWavePowBase: 50
-  miniWavePowFactor: 5
+  miniWavePowBase: 100
+  miniWavePowFactor: 10
   miniWavePowLambda: 2
-  mapPrefab: {fileID: 6491832402989437903, guid: 562678388eb3214429b1b0a3ab8e1ee3, type: 3}
+  mapPrefab: {fileID: 6491832402989437903, guid: 5cad98df3c17ad74daa722356a4d88f0, type: 3}

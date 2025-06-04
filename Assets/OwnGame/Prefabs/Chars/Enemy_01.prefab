@@ -143,7 +143,7 @@ GameObject:
   - component: {fileID: 3586221247917301656}
   - component: {fileID: 8893365159058347356}
   m_Layer: 9
-  m_Name: Enemy_00
+  m_Name: Enemy_01
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -489,6 +489,18 @@ PrefabInstance:
       propertyPath: enemyController
       value: 
       objectReference: {fileID: 8893365159058347356}
+    - target: {fileID: 578376449398627443, guid: 69844e4da6c09e8498a213e2156f5c99, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 578376449398627443, guid: 69844e4da6c09e8498a213e2156f5c99, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 578376449398627443, guid: 69844e4da6c09e8498a213e2156f5c99, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 578376449398627443, guid: 69844e4da6c09e8498a213e2156f5c99, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

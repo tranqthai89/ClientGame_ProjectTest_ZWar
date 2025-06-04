@@ -12,6 +12,7 @@ public class ExplosionController : BulletController
     public override void Init(BulletValueDetail _bulletValueDetail)
     {
         base.Init(_bulletValueDetail);
+        bulletValueDetail.canExplosion = false; // phải tắt biến này, nếu không nó sẽ tạo ra vụ nổ nữa khi va chạm
         bulletValueDetail.canPenetrated = true; // Explosion can penetrate
     }
     public override void Move(){

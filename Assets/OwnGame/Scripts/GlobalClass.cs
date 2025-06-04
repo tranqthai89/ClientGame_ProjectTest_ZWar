@@ -13,7 +13,9 @@ namespace GlobalClass
         
         public void Init(GunValueDetail _other)
         {
-            bulletValueDetail = new BulletValueDetail();
+            if(bulletValueDetail == null){
+                bulletValueDetail = new BulletValueDetail();
+            }
             bulletValueDetail.Init(_other.bulletValueDetail);
             atkSpeed = _other.atkSpeed;
             bulletSpeed = _other.bulletSpeed;    
@@ -21,11 +23,13 @@ namespace GlobalClass
         }
     }
     [Serializable] public class BulletValueDetail{
+        public bool canExplosion;
         public bool canPenetrated; // xuyên mục tiêu, không tự hủy khi chạm vào mục tiêu
         public int damage;
         public BulletValueDetail(){ }
         public void Init(BulletValueDetail _other)
         {
+            canExplosion = _other.canExplosion;
             canPenetrated = _other.canPenetrated;
             damage = _other.damage;    
         }

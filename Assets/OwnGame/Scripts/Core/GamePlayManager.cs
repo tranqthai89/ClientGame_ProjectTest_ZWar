@@ -21,6 +21,7 @@ public class GamePlayManager : MonoBehaviour
     public MySimplePoolManager bulletPoolManager;
     public MySimplePoolManager enemyPoolManager;
     public MySimplePoolManager mainCharPoolManager;
+    public MySimplePoolManager mapPoolManager;
 
     public GameControl currentGameControl;
 
@@ -32,10 +33,6 @@ public class GamePlayManager : MonoBehaviour
             return;
         }
         Instance = this;
-
-        effectPoolManager = new MySimplePoolManager();
-        bulletPoolManager = new MySimplePoolManager();
-        enemyPoolManager = new MySimplePoolManager();
     }
 
     void Start()
@@ -151,6 +148,13 @@ public class GamePlayManager : MonoBehaviour
         }
         currentGameControl.mainChar.SwitchMissile();
         UIManager.RefreshUI_GroupBtnSwitchGun();
+    }
+    public void OnBtnQuickNextLevel()
+    {
+        if(currentGameControl.currentState != GamePlayState.PlayGame){
+            return; 
+        }
+        waveManager.CheatStopNow();
     }
     #endregion
 }

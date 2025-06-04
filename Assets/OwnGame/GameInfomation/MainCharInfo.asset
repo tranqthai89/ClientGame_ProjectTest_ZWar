@@ -19,6 +19,7 @@ MonoBehaviour:
   detectionRadius: 7.5
   gunMachineValueDetail:
     bulletValueDetail:
+      canExplosion: 0
       canPenetrated: 0
       damage: 5
     atkSpeed: 10
@@ -26,6 +27,7 @@ MonoBehaviour:
     rangeShot: 10
   gunCreateExplosionValueDetail:
     bulletValueDetail:
+      canExplosion: 1
       canPenetrated: 0
       damage: 30
     atkSpeed: 1

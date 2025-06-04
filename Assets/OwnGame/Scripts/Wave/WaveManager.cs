@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DevToolkit;
 using GlobalEnum;
 using UnityEngine;
 
@@ -47,8 +48,6 @@ public class WaveManager : MonoBehaviour
         }
     }
     #endregion
-
-    public List<Transform> listSpawnPoints;
     
     public MapInfo CurrentMapInfo{get;set;}
     public WaveState CurrentState{get;set;}
@@ -146,9 +145,16 @@ public class WaveManager : MonoBehaviour
 
         for(int i = 0; i < _totalMiniWaves; i ++){
             MiniWaveCatchedInfo _miniWaveCatched = new MiniWaveCatchedInfo();
+
+            RandomItem _randomItem = new RandomItem();
+            for(int j = 0; j < _listEnemyRandom.Count; j++){
+                _randomItem.AddItem(j, (int) _listEnemyRandom[j].weight);
+            }
+
             List<int> _listIndexReject = new List<int>();
             while(_miniWaveCatched.powCatched < _miniWavePow){
-                int _rdIndex = (int) UnityEngine.Random.Range(0, _listEnemyRandom.Count);
+                RandomItem.Item _rdItem = _randomItem.Roll(_listIndexReject);
+                int _rdIndex = (int) _rdItem.valueCheck;
                 // ---- Kiểm tra xem đủ số lượng trong mini wave đó chưa ---- //
                 if(_listEnemyRandom[_rdIndex].limitAppearInWave == 0){
                     _listIndexReject.Add(_rdIndex);
@@ -226,7 +232,7 @@ public class WaveManager : MonoBehaviour
             }
             CurrentWave.Run();
 
-            yield return new WaitUntil(()=>(!CurrentWave.IsRunning() || GamePlayManagerInstance.currentGameControl.mainChar.CurrentState == MainCharState.Die));
+            yield return new WaitUntil(()=>!CurrentWave.IsRunning() || GamePlayManagerInstance.currentGameControl.mainChar.CurrentState == MainCharState.Die);
             if(GamePlayManagerInstance.currentGameControl.mainChar.CurrentHp <= 0){
                 break;
             }
@@ -261,5 +267,36 @@ public class WaveManager : MonoBehaviour
             GamePlayManagerInstance.currentGameControl.OnWaveManagerFinished();
         }
     }
-    
+    public Coroutine CheatStopNow(){
+        if(CurrentState != WaveState.CreateWave){
+            return null;
+        }
+        if(process_Run != null){
+            StopCoroutine(process_Run);
+            process_Run = null;
+        }
+        return StartCoroutine(DoProcess_CheatStopNow());
+    }
+    IEnumerator DoProcess_CheatStopNow(){
+        if(CurrentWave != null){
+            CurrentWave.Stop();
+        }
+        CurrentWave = null;
+        
+        CurrentState = WaveState.Finished;
+        if(GamePlayManagerInstance.currentGameControl.OnRunMapFinished!= null){
+            GamePlayManagerInstance.currentGameControl.OnRunMapFinished();
+        }
+        yield return new WaitForSeconds(2f);
+        if(GamePlayManagerInstance.currentGameControl.OnSetDataWhenFinish!= null){
+            GamePlayManagerInstance.currentGameControl.OnSetDataWhenFinish();
+        }
+        yield return new WaitForSeconds(1f);
+
+        process_Run = null;
+
+        if(GamePlayManagerInstance.currentGameControl.OnWaveManagerFinished != null){
+            GamePlayManagerInstance.currentGameControl.OnWaveManagerFinished();
+        }
+    }
 }

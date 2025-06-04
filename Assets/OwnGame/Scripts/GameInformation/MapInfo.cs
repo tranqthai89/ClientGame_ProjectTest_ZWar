@@ -14,6 +14,7 @@ public class MapInfo : ScriptableObject
 
     [Serializable] public class EnemyInWave{
         public EnemyInfo enemyInfo;
+        public int weight;
         [Tooltip("Nếu = -1 thì ko có giới hạn")] public int limitAppearInWave = -1; // giới hạn số lượng quái cùng loại này xuất hiện cùng lúc
     }
     public List<EnemyInWave> listEnemyRandom;
@@ -27,6 +28,9 @@ public class MapInfo : ScriptableObject
     [SerializeField] int miniWavePowBase;
     [SerializeField] float miniWavePowFactor;
     [SerializeField] float miniWavePowLambda;
+
+    [Header("Map Prefab")]
+    public MapController mapPrefab;
     
     public long GetPowerWave(int _wave){ // level bắt đầu từ 1, wave bắt đầu = 0
         string _functionName = "GetPowerWave";

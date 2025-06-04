@@ -241,6 +241,9 @@ public class MainCharController : CharController
         {
             return; // Nếu không thể nhận sát thương, không làm gì cả
         }
+        if(GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame){
+            return;
+        }
         MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxMainCharHit);
         CurrentHp -= _damage;
         hpBarCanvasGroup.alpha = 1f; // Hiển thị thanh máu khi bị tấn công
@@ -319,6 +322,7 @@ public class MainCharController : CharController
         {
             Vector3 _direction = (target.PosOfDetect - transform.position).normalized;
             _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
+
             if(_direction != Vector3.zero)
             {
                 model.forward = Vector3.Lerp(model.forward, _direction, Time.deltaTime * rotSpeed);
@@ -348,13 +352,17 @@ public class MainCharController : CharController
             //     _minDistance = distance;
             //     _nearestEnemy = _collider.transform;
             // }
-            Vector3 _directionToTarget = (_enemyController.PosOfDetect - transform.position).normalized;
-            float _distanceToTarget = Vector3.Distance(transform.position, _enemyController.PosOfDetect);
+            Vector3 _directionToTarget = (_enemyController.PosOfDetect - PosOfDetect).normalized;
+            float _distanceToTarget = Vector3.Distance(PosOfDetect, _enemyController.PosOfDetect);
+
+            float _heightDifference = Mathf.Abs(_enemyController.PosOfDetect.y - PosOfDetect.y);
+            // float _angleToTarget = Math.Abs(Vector3.Angle(model.forward, _directionToTarget));
 
             // Kiểm tra xem có vật cản giữa nhân vật và mục tiêu không
-            if (!Physics.Raycast(transform.position, _directionToTarget, _distanceToTarget, obstacleLayer))
+            if (!Physics.Raycast(PosOfDetect, _directionToTarget, _distanceToTarget, obstacleLayer))
             {
-                if (_distanceToTarget < _minDistance)
+                // Kiểm tra điều kiện ngang tầm và đối mặt trước khi chọn enemy gần nhất
+                if (_distanceToTarget < _minDistance && _heightDifference <= 1f)
                 {
                     _minDistance = _distanceToTarget;
                     _nearestEnemy = _enemyController;

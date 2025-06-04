@@ -5,6 +5,7 @@ using UnityEngine;
 
 public static class MyConstant
 {
+	public static System.Random random = new System.Random();
     public static T[] ShallowCopy<T>(this T[] _originalMatrix)
 	{
 		T[] _dataClone = new T[_originalMatrix.Length];

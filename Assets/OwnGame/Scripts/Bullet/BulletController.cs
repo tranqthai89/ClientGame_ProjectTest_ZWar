@@ -16,6 +16,7 @@ public class BulletController : MySimplePoolObjectController
 
     [Header("Prefabs")]
     [SerializeField] ZWar.EffectController effectHitPrefab;
+    [SerializeField] ExplosionController explosionPrefab;
 
     IEnumerator process_Move;
     
@@ -44,7 +45,18 @@ public class BulletController : MySimplePoolObjectController
     public virtual void CreateEffectHit()
     {
         if(effectHitPrefab != null){
-            ZWar.EffectController _effectHit = GamePlayManager.Instance.CreateEffect(effectHitPrefab, transform.position, Quaternion.identity);
+            GamePlayManager.Instance.CreateEffect(effectHitPrefab, transform.position, Quaternion.identity);
+        }
+    }
+    public virtual void CreateExplosion(){
+        if(explosionPrefab != null)
+        {
+            MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxExplosion);
+            ExplosionController _explosion = GamePlayManager.Instance.CreateBullet(explosionPrefab, transform.position, Quaternion.identity);
+            _explosion.Init(bulletValueDetail);
+            _explosion.Move();
+        }else{
+            Debug.LogError("explosionPrefab = null");
         }
     }
     public virtual void Move(){
@@ -91,6 +103,11 @@ public class BulletController : MySimplePoolObjectController
     public virtual void OnEventTriggerEnter2D(Collider _other) {
         // Debug.Log("OnEventTriggerEnter2D | Va chạm với: " + other.gameObject.name);
         if(_other.tag.Equals("Ground") || _other.tag.Equals("Obstacle")){
+            if(bulletValueDetail.canExplosion){
+                CreateExplosion();
+            }else{
+                CreateEffectHit();
+            }
             SelfDestruction();
         }
     }

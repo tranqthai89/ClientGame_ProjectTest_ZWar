@@ -20,8 +20,9 @@ public class GameControl
     public GamePlayState currentState;
 
     public MainCharController mainChar;
+    public MapController currentMap;
 
-    public int currentLevelMap;
+    public int indexMapInfo;
 
     public System.Action OnStartGame;
     public System.Action OnStartMap;
@@ -35,7 +36,7 @@ public class GameControl
 
     public GameControl(){
         collectionInfo = new CollectionInfo();
-        currentLevelMap = 0;
+        indexMapInfo = 0;
         currentState = GamePlayState.PrepareToBattle;
         GamePlayManagerInstance.StartCoroutine(DoActionPrepareToBattle());
     }
@@ -84,8 +85,8 @@ public class GameControl
             Debug.Log("Set Data When Finish");
             
             if(mainChar.CurrentState != MainCharState.Die){
-                if(currentLevelMap + 1 < GameInformation.Instance.listMapInfo.Count){
-                    currentLevelMap ++; // tăng level map lên
+                if(indexMapInfo + 1 < GameInformation.Instance.listMapInfo.Count){
+                    indexMapInfo ++; // tăng level map lên
                 }
             }
 
@@ -119,23 +120,51 @@ public class GameControl
         GamePlayManagerInstance.UIManager.HideAllPanels();
 
         collectionInfo = new CollectionInfo();
-        GamePlayManagerInstance.mainCharPoolManager = new MySimplePoolManager();
-        GamePlayManagerInstance.effectPoolManager = new MySimplePoolManager();
-        GamePlayManagerInstance.bulletPoolManager = new MySimplePoolManager();
-        GamePlayManagerInstance.enemyPoolManager = new MySimplePoolManager();
+        if(GamePlayManagerInstance.mainCharPoolManager == null){
+            GamePlayManagerInstance.mainCharPoolManager = new MySimplePoolManager();
+        }
+        if(GamePlayManagerInstance.effectPoolManager == null){
+            GamePlayManagerInstance.effectPoolManager = new MySimplePoolManager();
+        }
+        if(GamePlayManagerInstance.bulletPoolManager == null){
+            GamePlayManagerInstance.bulletPoolManager = new MySimplePoolManager();
+        }
+        if(GamePlayManagerInstance.enemyPoolManager == null){
+            GamePlayManagerInstance.enemyPoolManager = new MySimplePoolManager();
+        }
+        if(GamePlayManagerInstance.mapPoolManager == null){
+            GamePlayManagerInstance.mapPoolManager = new MySimplePoolManager();
+        }
 
         InitCallback();
 
+        yield return GamePlayManagerInstance.StartCoroutine(DoActionInitMap());
         yield return GamePlayManagerInstance.StartCoroutine(DoActionInitMainChar());
-        yield return GamePlayManagerInstance.waveManager.Init(GameInformation.Instance.listMapInfo[currentLevelMap]);
+        yield return GamePlayManagerInstance.waveManager.Init(currentMap.MyMapInfo);
         
         if(OnStartGame != null){
             OnStartGame();
         }
     }
+    protected IEnumerator DoActionInitMap(){
+        yield return new WaitForEndOfFrame();
+        if(currentMap != null && currentMap.MyMapInfo.level == GameInformation.Instance.listMapInfo[indexMapInfo].level){
+            yield break;
+        }
+        if(currentMap == null || currentMap.MyMapInfo.level != GameInformation.Instance.listMapInfo[indexMapInfo].level){
+            GamePlayManagerInstance.mapPoolManager.ClearAllObjectsNow();
+        }
+
+        currentMap = LeanPool.Spawn(GameInformation.Instance.listMapInfo[indexMapInfo].mapPrefab, GamePlayManagerInstance.transform);
+        currentMap.Init(GameInformation.Instance.listMapInfo[indexMapInfo]);
+        currentMap.onSelfDestruction = (_o) => {
+            GamePlayManagerInstance.mapPoolManager.RemoveObjectsNow(_o);
+        };
+        GamePlayManagerInstance.mapPoolManager.AddObject(currentMap);
+    }
     protected IEnumerator DoActionInitMainChar(){
         yield return new WaitForEndOfFrame();
-        mainChar = LeanPool.Spawn(GameInformation.Instance.mainCharInfo.prefab, Vector3.zero, Quaternion.identity);
+        mainChar = LeanPool.Spawn(GameInformation.Instance.mainCharInfo.prefab, currentMap.mainCharSpawnPoint.position, currentMap.mainCharSpawnPoint.rotation);
         mainChar.Init(GameInformation.Instance.mainCharInfo);
         mainChar.onSelfDestruction = (_o) => {
             GamePlayManagerInstance.mainCharPoolManager.RemoveObjectsNow(_o);

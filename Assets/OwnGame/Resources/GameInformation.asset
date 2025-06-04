@@ -15,6 +15,7 @@ MonoBehaviour:
   mainCharInfo: {fileID: 11400000, guid: d4098592708af4b418e0fb7f847f29b9, type: 2}
   listMapInfo:
   - {fileID: 11400000, guid: 1de05ba42f542634b8e1bb7c8a6c482f, type: 2}
+  - {fileID: 11400000, guid: 74000921c3b91df4ca9947d02e06aa7f, type: 2}
   bgm: {fileID: 8300000, guid: 7b9fcc6d36877ed4abc37999666a2c10, type: 3}
   sfxListMainCharStep:
   - {fileID: 8300000, guid: 72f526a6a9890f643a88e85a61c86c8a, type: 3}

@@ -9,8 +9,7 @@ namespace GlobalEnum{
         GunBaseOnAnimation
     }
     public enum BulletType{
-        Normal,
-        CanCreateExplosion
+        Normal
 	}
     public enum CharType{
         Unknown = 0,
@@ -19,6 +18,7 @@ namespace GlobalEnum{
     }
     public enum EnemyType{
         Enemy_00 = 0,
+        Enemy_01,
     }
     public enum MainCharState{
         Idle, Move, Die
