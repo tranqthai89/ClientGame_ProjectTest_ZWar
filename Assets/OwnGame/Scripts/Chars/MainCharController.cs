@@ -58,6 +58,12 @@ public class MainCharController : CharController
             return 0f; // Trả về 0 nếu không có súng hiện tại
         }
     }
+    public override bool IsRunning
+    {
+        get{
+            return process_RunBehavior != null;
+        }
+    }
     EnemyController target;
     public MainCharInfo MyCharInfo{get;set;} // Thông tin về nhân vật chính
     public GunController CurrentGun{get;set;}
@@ -67,13 +73,19 @@ public class MainCharController : CharController
     int indexSfxStep = 0; // Biến để đếm số lần phát âm thanh bước chân
     int countSteps = 0; // Biến đếm số bước đi
 
-    IEnumerator process_Die;
+    IEnumerator process_RunBehavior, process_Die, process_UpdateHPBar;
 
     void Awake()
     {
         ResetData();
     }
-
+    public override void StopAllActionNow()
+    {
+        base.StopAllActionNow();
+        process_RunBehavior = null;
+        process_UpdateHPBar = null;
+        process_Die = null;
+    }
     public override void ResetData()
     {
         base.ResetData();
@@ -127,114 +139,140 @@ public class MainCharController : CharController
     }
     
     #region Behaviors
-    void Update()
-    {
-        if(!IsRunning || !IsInstalled || CurrentState == MainCharState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame)
-        {
+    public override void Run(){
+        if(!IsInstalled){
+            return;
+        }
+        if(process_RunBehavior != null){
             return;
         }
 
-        target = FindNearestEnemy();
-        float _x = 0f;
-        float _z = 0f;
-        #if UNITY_EDITOR
-            _x = Input.GetAxis("Horizontal");
-            _z = Input.GetAxis("Vertical");
-        #endif
+        base.Run();
 
-        if(_x == 0f)
+        process_RunBehavior = DoProcess_Behavior();
+        StartCoroutine(process_RunBehavior);
+
+        process_UpdateHPBar = DoProcess_UpdateHPBar();
+        StartCoroutine(process_UpdateHPBar);
+    }
+    private IEnumerator DoProcess_Behavior()
+    {
+        while(true)
         {
-            _x = GamePlayManagerInstance.UIManager.variableJoystick.Horizontal;
-        }
-        if(_z == 0f)
-        {
-            _z = GamePlayManagerInstance.UIManager.variableJoystick.Vertical;
-        }
-        // Vì chỉ có 2 animation là Idle và Move nên set Blend_Speed là 0 hoặc 1
-        if (_x == 0 && _z == 0)
-        {
-            if (CurrentState != MainCharState.Idle)
+            if(CurrentState == MainCharState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame)
             {
-                myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
-                myAnimation.animator.SetFloat("Blend_Speed", 0f); // Đặt tốc độ về 0 khi không di chuyển
-                CurrentState = MainCharState.Idle;
+                break;;
             }
-            countSteps = 0; // Đặt lại số bước đi khi đứng yên
-            indexSfxStep = 0; // Đặt lại chỉ số âm thanh bước chân
-        }
-        else
-        {
-            if (CurrentState != MainCharState.Move)
-            {
-                myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
-                myAnimation.animator.SetFloat("Blend_Speed", 1f);
-                CurrentState = MainCharState.Move;
-            }
-            countSteps++;
-            if(countSteps % 60 == 0) 
-            {
-                MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxListMainCharStep[indexSfxStep]);
-                indexSfxStep++;
-                if(indexSfxStep >= GameInformation.Instance.sfxListMainCharStep.Count)
-                {
-                    indexSfxStep = 0; // Reset lại chỉ số âm thanh bước chân nếu đã đến cuối danh sách
-                }
-                countSteps = 0; // Đặt lại số bước đi
-            }
-        }
+            yield return null;
 
-        Vector3 _move = new Vector3(_x, 0, _z).normalized * speed;
-
-        // Sử dụng Rigidbody để di chuyển nhân vật
-        rb.velocity = new Vector3(_move.x, rb.velocity.y, _move.z);
-
-        // Xoay nhân vật theo hướng di chuyển
-        if(target != null)
-        {
-            FaceTarget();
-            CurrentGun.Shoot();
-            radar.color = radarColor_Detecting;
-        }
-        else
-        {
-            if (_move != Vector3.zero)
-            {
-                Vector3 _direction = _move.normalized;
-                _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
-                if(_direction != Vector3.zero)
-                {
-                    model.forward = Vector3.Lerp(model.forward, _direction, Time.deltaTime * rotSpeed);
-                    gunContainer.forward = model.forward; // Cập nhật hướng của spawner theo hướng của model
-                }
-            }
-            radar.color = radarColor_Normal;
-
+            target = FindNearestEnemy();
+            float _x = 0f;
+            float _z = 0f;
             #if UNITY_EDITOR
-                if (Input.GetMouseButtonDown(0)) // Kiểm tra nếu chuột trái được nhấn
-                {
-                    CurrentGun.Shoot();
-                }
+                _x = Input.GetAxis("Horizontal");
+                _z = Input.GetAxis("Vertical");
             #endif
-        }
 
-        // Xử lý nhảy
-        isGrounded = IsGrounded();
-        if (isGrounded && Input.GetButtonDown("Jump"))
-        {
-            rb.AddForce(Vector3.up * Mathf.Sqrt(jumpHeight * -2f * gravity), ForceMode.Impulse);
+            if(_x == 0f)
+            {
+                _x = GamePlayManagerInstance.UIManager.variableJoystick.Horizontal;
+            }
+            if(_z == 0f)
+            {
+                _z = GamePlayManagerInstance.UIManager.variableJoystick.Vertical;
+            }
+            // Vì chỉ có 2 animation là Idle và Move nên set Blend_Speed là 0 hoặc 1
+            if (_x == 0 && _z == 0)
+            {
+                if (CurrentState != MainCharState.Idle)
+                {
+                    myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
+                    myAnimation.animator.SetFloat("Blend_Speed", 0f); // Đặt tốc độ về 0 khi không di chuyển
+                    CurrentState = MainCharState.Idle;
+                }
+                countSteps = 0; // Đặt lại số bước đi khi đứng yên
+                indexSfxStep = 0; // Đặt lại chỉ số âm thanh bước chân
+            }
+            else
+            {
+                if (CurrentState != MainCharState.Move)
+                {
+                    myAnimation.SetAnimByState(MainChar_StateAnimation.IdleAndMove);
+                    myAnimation.animator.SetFloat("Blend_Speed", 1f);
+                    CurrentState = MainCharState.Move;
+                }
+                countSteps++;
+                if(countSteps % 60 == 0) 
+                {
+                    MyAudioManager.Instance.PlaySfx(GameInformation.Instance.sfxListMainCharStep[indexSfxStep]);
+                    indexSfxStep++;
+                    if(indexSfxStep >= GameInformation.Instance.sfxListMainCharStep.Count)
+                    {
+                        indexSfxStep = 0; // Reset lại chỉ số âm thanh bước chân nếu đã đến cuối danh sách
+                    }
+                    countSteps = 0; // Đặt lại số bước đi
+                }
+            }
+
+            Vector3 _move = new Vector3(_x, 0, _z).normalized * speed;
+
+            // Sử dụng Rigidbody để di chuyển nhân vật
+            rb.velocity = new Vector3(_move.x, rb.velocity.y, _move.z);
+
+            // Xoay nhân vật theo hướng di chuyển
+            if(target != null)
+            {
+                FaceTarget();
+                CurrentGun.Shoot();
+                radar.color = radarColor_Detecting;
+            }
+            else
+            {
+                if (_move != Vector3.zero)
+                {
+                    Vector3 _direction = _move.normalized;
+                    _direction.y = 0; // Khóa trục X và Z, chỉ xoay theo trục Y
+                    if(_direction != Vector3.zero)
+                    {
+                        model.forward = Vector3.Lerp(model.forward, _direction, Time.deltaTime * rotSpeed);
+                        gunContainer.forward = model.forward; // Cập nhật hướng của spawner theo hướng của model
+                    }
+                }
+                radar.color = radarColor_Normal;
+
+                #if UNITY_EDITOR
+                    if (Input.GetMouseButtonDown(0)) // Kiểm tra nếu chuột trái được nhấn
+                    {
+                        CurrentGun.Shoot();
+                    }
+                #endif
+            }
+
+            // Xử lý nhảy
+            isGrounded = IsGrounded();
+            if (isGrounded && Input.GetButtonDown("Jump"))
+            {
+                rb.AddForce(Vector3.up * Mathf.Sqrt(jumpHeight * -2f * gravity), ForceMode.Impulse);
+            }
+            // Debug.Log(move + " - " + speed + " - " + isGrounded + " - " + velocity);
         }
-        // Debug.Log(move + " - " + speed + " - " + isGrounded + " - " + velocity);
+        process_RunBehavior = null;
     }
-    void LateUpdate()
+    private IEnumerator DoProcess_UpdateHPBar()
     {
-        if(!IsRunning || !IsInstalled)
-        {
-            return;
+        while(true){
+            if(CurrentState == MainCharState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame)
+            {
+                break;;
+            }
+            yield return new WaitForSeconds(0.1f);
+            hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
+            hpBarCanvas.transform.LookAt(Camera.main.transform);
+            hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
         }
-        hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
-        hpBarCanvas.transform.LookAt(Camera.main.transform);
-        hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
+        process_UpdateHPBar = null;
     }
+    
     protected void TakeDamage(int _damage)
     {
         if(!CanBeDamaged)

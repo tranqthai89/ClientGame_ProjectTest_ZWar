@@ -138,6 +138,7 @@ public class GamePlayManager : MonoBehaviour
         }
         currentGameControl.mainChar.SwitchMachinGun();
         UIManager.RefreshUI_GroupBtnSwitchGun();
+        UIManager.RefreshUI_MainCharInfo();
     }
     public void OnBtnSwitchMissile()
     {
@@ -148,6 +149,7 @@ public class GamePlayManager : MonoBehaviour
         }
         currentGameControl.mainChar.SwitchMissile();
         UIManager.RefreshUI_GroupBtnSwitchGun();
+        UIManager.RefreshUI_MainCharInfo();
     }
     public void OnBtnQuickNextLevel()
     {

@@ -25,11 +25,17 @@ public class EnemyController : CharController
     public EnemyState CurrentState { get; set; } // Trạng thái hiện tại của kẻ địch
     MainCharController target; // Đối tượng nhân vật cần đuổi theo
 
-    IEnumerator process_Die;
+    IEnumerator process_RunBehavior, process_Die, process_UpdateHPBar;
 
     bool IsHideModel{
         get{
             return !model.gameObject.activeSelf;
+        }
+    }
+    public override bool IsRunning
+    {
+        get{
+            return process_RunBehavior != null;
         }
     }
 
@@ -38,6 +44,8 @@ public class EnemyController : CharController
         base.StopAllActionNow();
         
         process_Die = null;
+        process_RunBehavior = null;
+        process_UpdateHPBar = null;
     }
     public override void ResetData()
     {
@@ -86,49 +94,70 @@ public class EnemyController : CharController
     }
 
     #region Behaviors
-    void Update() {
-        if(!IsRunning || !IsInstalled || CurrentState == EnemyState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame){
+    public override void Run(){
+        if(!IsInstalled){
             return;
         }
-        if(CurrentState == EnemyState.Attack){return;}
+        if(process_RunBehavior != null){
+            return;
+        }
 
-        HideModelIfOutOfCamera();
+        base.Run();
 
-        target = FindTarget(); // Tìm kiếm mục tiêu
-        if(IsHideModel){
-            if (target != null) {
-                agent.isStopped = false; 
-                agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
+        process_RunBehavior = DoProcess_Behavior();
+        StartCoroutine(process_RunBehavior);
+
+        process_UpdateHPBar = DoProcess_UpdateHPBar();
+        StartCoroutine(process_UpdateHPBar);
+    }
+    private IEnumerator DoProcess_Behavior() {
+        while(true)
+        {
+            yield return null;
+            if(CurrentState == EnemyState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame){
+                break;
             }
-            else{
-                agent.isStopped = true; // Dừng di chuyển
-            }
-        }else{
-            if (target != null) {
-                if(myGun.CheckIfInRangeAttack(target.PosOfDetect)){
-                    if(CurrentState != EnemyState.Attack){
-                        myAnimation.SetAnimByState(Enemy_StateAnimation.Attack);
-                        CurrentState = EnemyState.Attack;
-                    }
-                    agent.isStopped = true; 
-                    myGun.Shoot();
-                }else{
-                    if(CurrentState != EnemyState.Move){
-                        myAnimation.SetAnimByState(Enemy_StateAnimation.Move);
-                        CurrentState = EnemyState.Move;
-                    }
+            if(CurrentState == EnemyState.Attack){continue;}
+
+            HideModelIfOutOfCamera();
+
+            target = FindTarget(); // Tìm kiếm mục tiêu
+            if(IsHideModel){
+                if (target != null) {
                     agent.isStopped = false; 
                     agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
                 }
-            }else{
-                if(CurrentState != EnemyState.Idle){
-                    myAnimation.SetAnimByState(Enemy_StateAnimation.Idle);
-                    CurrentState = EnemyState.Idle;
+                else{
+                    agent.isStopped = true; // Dừng di chuyển
                 }
-                agent.isStopped = true; // Dừng di chuyển
+            }else{
+                if (target != null) {
+                    if(myGun.CheckIfInRangeAttack(target.PosOfDetect)){
+                        if(CurrentState != EnemyState.Attack){
+                            myAnimation.SetAnimByState(Enemy_StateAnimation.Attack);
+                            CurrentState = EnemyState.Attack;
+                        }
+                        agent.isStopped = true; 
+                        myGun.Shoot();
+                    }else{
+                        if(CurrentState != EnemyState.Move){
+                            myAnimation.SetAnimByState(Enemy_StateAnimation.Move);
+                            CurrentState = EnemyState.Move;
+                        }
+                        agent.isStopped = false; 
+                        agent.SetDestination(target.transform.position); // Đặt vị trí đích là nhân vật
+                    }
+                }else{
+                    if(CurrentState != EnemyState.Idle){
+                        myAnimation.SetAnimByState(Enemy_StateAnimation.Idle);
+                        CurrentState = EnemyState.Idle;
+                    }
+                    agent.isStopped = true; // Dừng di chuyển
+                }
+                model.transform.localPosition = Vector3.zero; // vì model tìm được đang lỗi animation nên buộc phải reset lại vị trí của model
             }
-            model.transform.localPosition = Vector3.zero; // vì model tìm được đang lỗi animation nên buộc phải reset lại vị trí của model
         }
+        process_RunBehavior = null;
     }
     void HideModelIfOutOfCamera(){
         // - Optimize:
@@ -147,15 +176,20 @@ public class EnemyController : CharController
             model.gameObject.SetActive(true); // Bật lại nếu vào màn hình
         }
     }
-    void LateUpdate()
+    IEnumerator DoProcess_UpdateHPBar()
     {
-        if(!IsRunning || !IsInstalled)
-        {
-            return;
+        while(true){
+            if(CurrentState == EnemyState.Die || GamePlayManagerInstance.currentGameControl.currentState != GamePlayState.PlayGame)
+            {
+                break;
+            }
+            yield return new WaitForSeconds(0.1f);
+            hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
+            hpBarCanvas.transform.LookAt(Camera.main.transform);
+            hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
         }
-        hpBarCanvas.worldCamera = Camera.main; // Đặt camera cho canvas hiển thị thanh máu
-        hpBarCanvas.transform.LookAt(Camera.main.transform);
-        hpBarCanvas.transform.Rotate(0, 180, 0); // Đảo ngược hướng nếu cần
+        
+        process_UpdateHPBar = null;
     }
     protected void TakeDamage(int _damage)
     {

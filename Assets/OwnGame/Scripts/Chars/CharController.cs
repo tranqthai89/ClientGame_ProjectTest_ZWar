@@ -23,19 +23,17 @@ public class CharController : MySimplePoolObjectController
     public int CurrentHp{get;set;}
     public bool CanBeDamaged{get;set;} // biến này để set logic nhận damge, khi = false thì chỉ có hiệu ứng xảy ra nhưng ko gây damage
     public bool IsInstalled {get;set;}
-    public bool IsRunning {get;set;}
+    public virtual bool IsRunning {get;}
     public System.Action<CharController> OnDie;
 
     public override void ResetData(){
         base.ResetData();
         IsInstalled = false;
         CanBeDamaged = false;
-        IsRunning = false;
 
         OnDie = null;
     }
     public virtual void Run(){
-        IsRunning = true;
         CanBeDamaged = true;
     }
     public virtual void OnEventTriggerEnter2D(Collider _other) {}
